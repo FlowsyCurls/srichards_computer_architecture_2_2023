@@ -20,7 +20,7 @@ def print_address_bin(address):
     return binary_number
 
 def print_data_hex(data):
-    hex_str = hex(data)[2:].zfill(2)
+    hex_str = hex(data)[2:].zfill(4)
     return '0x'+hex_str
 
 # Enumeración para los posibles estados de un bloque
@@ -35,6 +35,5 @@ class State(Enum):
 class MessageType(Enum):
     RdReq = 0   # Solicitud de lectura
     RdResp = 1  # Respuesta a solicitud de lectura
-    WrReq = 2   # Solicitud de escritura
     Inv = 3     # Invaliación de bloque
-    WB = 4      # Write back (escritura a la memoria principal)
+    InvResp = 4 # Respues a la invalicacion de un bloque

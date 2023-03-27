@@ -109,23 +109,6 @@ class Controller:
     #     # Se escribe el dato en la memoria principal
     #     self.cache.bus.write(address, tag, sender.write_data)
 
-    # # Método privado para procesar un mensaje de invalidación
-    # def _process_invalidation(self, address):
-    #     self.cache.invalidate(address)
-
-    # # Método privado para procesar un mensaje de escritura a la memoria principal
-    # def _process_write_back(self, address, data):
-    #     block = self.cache.write(address)
-
-    #     if block:
-    #         # Se invalida el bloque
-    #         # Se escribe el dato en la memoria principal
-    #         self.bus.send_message(block.data, MessageType.WB)
-    #         block.state = State.INVALID
-
-    #         # Se escribe el dato en la memoria principal
-    #         self.bus.write(address, data)
-
 
 
 
