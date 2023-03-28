@@ -17,10 +17,6 @@ class Block:
     def set(self, data):
         self.data = data
 
-    def set(self, data, state):
-        self.state = state
-        self.data = data
-
     def set(self, address, data, state):
         self.state = state
         self.address = address
@@ -68,7 +64,8 @@ class Cache:
         with self.lock:
             # Se asume que se comprueba la existencia.
             block = self._get_block(address)
-            block.set(data, State.MODIFIED)
+            block.data = data
+            block.state = State.MODIFIED
             return block
 
     # Write cuando se hace despues de consultar un dato, con política de escritura
@@ -98,7 +95,16 @@ class Cache:
                     print(f"\033[{GREEN}{text}\033[0m")
                     return None
 
-            # If we haven't returned yet, all blocks are MODIFIED, so evict one
+
+            # Si alguno de los dos es modified
+            # se devuelve el bloque
+            for block in set:
+                if block.state == State.MODIFIED:
+                    text += f'{str(block)}'
+                    print(f"\033[{GREEN}{text}\033[0m")
+                    return block
+                
+            # If we haven't returned yet, all blocks are OWNED, so evict one
             block = set[0]
             return block
 

@@ -4,6 +4,7 @@ import threading
 import time
 from Utils import *
 
+
 class Bus:
     def __init__(self):
         self.processors = []
@@ -15,11 +16,11 @@ class Bus:
     def connect(self, processor):
         self.processors.append(processor)
         print(f"  🔄️  Conectando N{processor.id}...")
-        
+
     def state(self):
         for p in self.processors:
             print(p.cache)
-        
+
         print(self.memory)
 
     # Método para leer un bloque de la memoria principal
@@ -57,47 +58,27 @@ class Bus:
     def _process_response(self):
         response = self.response_queue.get()
         [src_id, target, message_type, address, detail] = response
-        
-        if message_type == MessageType.InvResp:
-            # Then is an invalidation.
-            text = f'    ◀  N{src_id}      {message_type.name}  to\tN{target.id}   |  {print_address_bin(address)}'
-            print(f"\033[{CIAN}{text}\033[0m")
-            target.controller._process_message(src_id, message_type, address)
-            return
-            
-        if message_type == MessageType.RdResp:
-            text = f'    ◀  N{src_id}      {message_type.name}  to\tN{target.id}   |  {print_address_bin(address)}   {detail}'
-            
-            color = RED if detail == "miss" else GREEN
-            print(f"\033[{color}{text}\033[0m")
-            target.controller._process_message(src_id, message_type, address, detail)
-            return
+        target.controller._process_message(
+            src_id, message_type, address, detail)
 
     def _process_taks(self):
         while True:
             # Procesar la solicitud aquí ...
             wait = True
-            # print(f' ∎∎∎∎∎   Espero request')
-
             while wait:
                 if not self.request_queue.empty():
                     wait = False
-                    time.sleep(2)
+                    time.sleep(0.1)
             self._process_request()
-            # print(f' ∎∎∎∎∎   Proceso request')
 
             wait = True
-            # print(f' ∎∎∎∎∎   Espero response')
             while wait:
                 if not self.response_queue.empty():
                     wait = False
-                    time.sleep(1)
-            # print(f' ∎∎∎∎∎   Proceso response')
+                    time.sleep(0.1)
             self._process_response()
 
     def run(self):
-        for i in range(8):
-            self.write(i, i)
 
         # Iniciar hilos de procesamiento de solicitudes
         for i in range(len(self.processors)):

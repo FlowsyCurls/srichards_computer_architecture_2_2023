@@ -21,14 +21,19 @@ class Memory:
         while self.locks[address]:
             data = self.blocks[address]
             print(
-                f"\033[{YELLOW} RAM  ➞   📜 \t{print_address_bin(address)}  ≻  {print_data_hex(data)}\033[0m")
+                f"\033[{YELLOW} RAM  ➞  📜   reading • • •   {print_address_bin(address)}  ≻  {print_data_hex(data)}\033[0m")
+            tiempo_espera = random.uniform(4, 7)
+            time.sleep(tiempo_espera)             # Espera el tiempo de espera generado
             return data
         return None
 
     def write(self, address, data):
         while self.locks[address]:
+
             self.blocks[address] = data
             print(
-                f"\033[{YELLOW} RAM  ➞   ✏️ \t{print_address_bin(address)}  ≻  {print_data_hex(data)}\033[0m")
+                f"\033[{YELLOW} RAM  ➞  ✏️   writing • • •   {print_address_bin(address)}  ≻  {print_data_hex(data)}\033[0m")
+            tiempo_espera = random.uniform(2, 4)
+            time.sleep(tiempo_espera)             # Espera el tiempo de espera generado
             return True
         return None

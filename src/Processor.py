@@ -11,22 +11,26 @@ class Processor():
         self.cache = Cache(id)
         self.bus = bus
         self.controller = Controller(self.cache, self.bus)
+        self.running = False
 
     def operate(self):
         # Generar una dirección aleatoria entre 0 y 7
         address = random.randint(0, 7)
         # Generar una operación aleatoria (lectura o escritura)
-        operation = random.choice(['read', 'write', 'read','write'])
+        operation = random.choice(['read', 'write', 'calc'])
         # operation = 'write'
         if operation == 'read':
-            print(f'Read from address {address}: ')
+            Instruction = f'READ  {print_address_bin(address)}'
             self.read(address)
         elif operation == 'write':
-            print(f'Write to address {address}')
-            self.write(address, random.randint(0, 65535))
+            n = random.randint(0, 65535)
+            Instruction = f'WRITE {print_address_bin(address)}; {print_data_hex(n)}'
+            self.write(address, n)
         elif operation == 'calc':
-            print(f'Calc')
+            Instruction = 'CALC'
             self.calc()
+        print(f"\033[{MAGENTA}\nProcessor {self.id}\033[0m\033[{WHITE}  {Instruction}\033[0m",)
+
 
     def read(self, address):
         self.controller.read(self, address)
@@ -37,22 +41,11 @@ class Processor():
     def calc(self):
         time.sleep(random.uniform(0.001, 0.01))
 
-    def run(self):
-        # Establecer el modo (paso a paso o automático)
-        # modo = input("¿Qué modo quieres utilizar? (paso a paso / automático): ")
-
-        # if modo == "1":
-        # Modo paso a paso
-        while True:
-
-            # Esperar a que el usuario presione una tecla
-            text = input("\n>  Press a key\n")
-
-            if text == 's':
-                self.bus.state()
-                time.sleep(4)
-                
+    def execute(self):
+        self.running = True
+        self.operate()
+        time.sleep(0.1)
+        self.running = False
             
-            print(f"\033[{MAGENTA}\nProcessor {self.id}\033[0m")
-            self.operate()
+
 

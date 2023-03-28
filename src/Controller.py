@@ -22,10 +22,10 @@ class Controller:
             if remote:
                 if block.state == State.MODIFIED:
                     # Si está en M y lo leen pasa a O
-                    block.set(address, State.OWNED)
+                    block.state = State.OWNED
 
             if not remote:
-                text = f' ✔️  Read Hit!   Cache {sender.id}    block: {block.id}    address: {address}    data: {block.data}'
+                text = f' ✔️  Read Hit!   Cache {sender.id}    block: {block.id}    addr: {print_address_bin(address)}    data: {print_data_hex(block.data)}'
                 print(f"\033[{GREEN}{text}\033[0m")
 
             return [True, block]
@@ -37,7 +37,6 @@ class Controller:
                 print(f"\033[{RED}{text}\033[0m")
 
                 # Si el bloque NO está en caché, se solicita a otro.
-                self.processors_list = []
                 self.bus.add_request(sender, MessageType.RdReq, address)
             return [False, None]
 
@@ -45,6 +44,9 @@ class Controller:
     def write(self, sender, address, data):
         # Verificar si el bloque está en caché
         [hit, block] = self.cache.read(address)
+
+        # Guardar el valor de escritura
+        self.tmp = data
 
         if hit:
             # Si el bloque está, se verifica el estado.
@@ -56,31 +58,30 @@ class Controller:
                 self.bus.add_request(sender, MessageType.Inv, address)
 
             block = self.cache.write_local(address, data)
-            text = f' ✔️  Write Hit!   Cache {sender.id}    block: {block.id}    address: {address}    data: {prev}  ->  {block.data}'
+            text = f' ✔️  Write Hit!   Cache {sender.id}    block: {block.id}    addr: {print_address_bin(address)}    data: {print_data_hex(prev)}  ➜  {print_data_hex(block.data)}'
             print(f"\033[{GREEN}{text}\033[0m")
 
         else:
             # Si el bloque no está, se invalidan los demas con esta direccion
-            text = f' ❌  Write Miss!   Cache {sender.id}   addr: {print_address_bin(address)}'
+            text = f' ❌  Write Miss!   Cache {sender.id}   addr: {print_address_bin(address)}    data: {print_data_hex(data)}'
             print(f"\033[{RED}{text}\033[0m")
 
             # Se realiza un request en esta direccion en los otros procesadores
             self.bus.add_request(sender, MessageType.Inv, address)
 
-            # Guardar el valor de escritura
-            self.tmp = data
-
     # Metodo para escribir una vez la invalidacion haya finalizado.
+
     def _process_invalidation_response(self, src_id, address, detail):
-        
-        text = f'   ❣️\tN{self.cache.id}          from\t N{src_id}   |  {detail}'
-        print(f"\033[{CIAN}{text}\033[0m")
+        if detail is not None:
+            text = f'   ❣️\tN{self.cache.id}          from\t N{src_id}   |  Invalidating - {detail}'
+            print(f"\033[{CIAN}{text}\033[0m")
 
         # Si no se ha recibido mensaje de todos los procesadores, esperar.
         self.processors_list.append(src_id)
         if len(self.processors_list) == (self.nodes_quantity-1):
             # Escribo en el bloque siguiendo la politica de escritura.
             self.cache.write(address, self.tmp, State.MODIFIED)
+            self.processors_list = []
 
     # Método para procesar un mensaje recibido
     def _process_message(self, sender, message_type, address, detail=None):
@@ -120,20 +121,24 @@ class Controller:
                 self.cache.id, sender, MessageType.RdResp, address, 'miss')
 
     def _process_read_response(self, src_id, address, detail):
-        text = f'   ❣️\tN{self.cache.id}        from   \t N{src_id}   |  {print_address_bin(address)}   {detail}'
+
+        # Print
+        text = f'   ❣️\tN{self.cache.id}  from   N{src_id}   ⟵   {detail}'
+        color = RED if detail == "miss" else YELLOW
+        print(f"\033[{color}{text}\033[0m")
+
         # Si el mensaje es un miss
         if detail == 'miss':
-            print(f"\033[{RED}{text}\033[0m")
             self.processors_list.append(src_id)
             if len(self.processors_list) == (self.nodes_quantity-1):
                 # Si no se encuentra en ninguno de los procesadores
                 # Se lee desde memoria y pasa a un estado exclusivo
                 data = self.bus.read(address)
                 self.cache.write(address, data, State.EXCLUSIVE)
+                self.processors_list = []
             return
 
-        # Si el mensaje es un hit
-        print(f"\033[{GREEN}{text}\033[0m")
+        # Si el mensaje es un hit de alguna de las cache
         # Escribo el dato consultado, con política de escritura
         block = self.cache.write(address, detail, State.SHARED)
 
@@ -151,7 +156,7 @@ class Controller:
         # Si la operacion es exitosa
         if block is None:
             print(
-                f'Se escribe correctamente en el block en la primera posicion por ser todos los blocks modified')
+                f'Correctamente escrito en el primer block del set (Ambos en estado M)')
 
     # Método privado para procesar un mensaje de invalidación
 
@@ -164,7 +169,7 @@ class Controller:
             if block.state in [State.OWNED, State.MODIFIED]:
                 # Si el bloque está en O O M, se hace WB
                 text = f'    ⤵️    N{sender.id} anula a N{self.cache.id}\n        Write-Back!    Cache {self.cache.id}    {block}'
-                print(f"\033[{GREEN}{text}\033[0m")
+                print(f"\033[{CIAN}{text}\033[0m")
                 self.bus.write(address, block.data)
             block.invalidate()
 

@@ -20,7 +20,7 @@ def print_address_bin(address):
     return binary_number
 
 def print_data_hex(data):
-    hex_str = hex(data)[2:].zfill(4)
+    hex_str = hex(data)[2:].zfill(4).upper()
     return '0x'+hex_str
 
 # Enumeración para los posibles estados de un bloque
