@@ -4,15 +4,15 @@ from Utils import *
 
 
 class Controller:
-    def __init__(self, cache, bus):
+    def __init__(self, bus, cache, cache_frame):
         self.cache = cache  # Caché a la que está asociado el controlador
+        self.cache_frame = cache_frame
         self.bus = bus
         self.processors_list = []
         self.nodes_quantity = 2
         self.tmp = None
 
     # Metodo para leer la cache local
-
     def read(self, sender, address, remote=False):
         # Verificar si el bloque está en caché
         [hit, block] = self.cache.read(address)
@@ -60,12 +60,14 @@ class Controller:
             block = self.cache.write_local(address, data)
             text = f' ✔️  Write Hit!   Cache {sender.id}    block: {block.id}    addr: {print_address_bin(address)}    data: {print_data_hex(prev)}  ➜  {print_data_hex(block.data)}'
             print(f"\033[{GREEN}{text}\033[0m")
+            
+            # Update en la interfaz
+            self.cache_frame.update(address)
 
         else:
             # Si el bloque no está, se invalidan los demas con esta direccion
             text = f' ❌  Write Miss!   Cache {sender.id}   addr: {print_address_bin(address)}    data: {print_data_hex(data)}'
             print(f"\033[{RED}{text}\033[0m")
-
             # Se realiza un request en esta direccion en los otros procesadores
             self.bus.add_request(sender, MessageType.Inv, address)
 
@@ -81,6 +83,8 @@ class Controller:
         if len(self.processors_list) == (self.nodes_quantity-1):
             # Escribo en el bloque siguiendo la politica de escritura.
             self.cache.write(address, self.tmp, State.MODIFIED)
+            # Update interfaz
+            self.cache_frame.update(address)
             self.processors_list = []
 
     # Método para procesar un mensaje recibido
@@ -135,12 +139,16 @@ class Controller:
                 # Se lee desde memoria y pasa a un estado exclusivo
                 data = self.bus.read(address)
                 self.cache.write(address, data, State.EXCLUSIVE)
+                # Update interfaz
+                self.cache_frame.update(address)
                 self.processors_list = []
             return
 
         # Si el mensaje es un hit de alguna de las cache
         # Escribo el dato consultado, con política de escritura
         block = self.cache.write(address, detail, State.SHARED)
+        # Update interfaz
+        self.cache_frame.update(address)
 
         if block is None:
             print(f'El procesador {src_id} ha brindado el bloque.')
@@ -152,6 +160,9 @@ class Controller:
         block.state = State.INVALID  # Se invalida el bloque, luego se modifica nuevamente
         # Se guarda el nuevo bloque en estado compartido.
         block = self.cache.write(address, detail, State.SHARED)
+        # Update Interfaz
+        self.cache_frame.update(address)
+
 
         # Si la operacion es exitosa
         if block is None:

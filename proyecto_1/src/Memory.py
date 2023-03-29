@@ -29,7 +29,6 @@ class Memory:
 
     def write(self, address, data):
         while self.locks[address]:
-
             self.blocks[address] = data
             print(
                 f"\033[{YELLOW} RAM  ➞  ✏️   writing • • •   {print_address_bin(address)}  ≻  {print_data_hex(data)}\033[0m")

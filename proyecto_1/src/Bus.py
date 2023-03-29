@@ -6,10 +6,10 @@ from Utils import *
 
 
 class Bus:
-    def __init__(self):
+    def __init__(self, memory_frame):
+        self.memory_frame = memory_frame
         self.processors = []
         self.memory = Memory()
-        self.lock = Lock()
         self.request_queue = queue.Queue()
         self.response_queue = queue.Queue()
 
@@ -25,13 +25,13 @@ class Bus:
 
     # Método para leer un bloque de la memoria principal
     def read(self, address):
-        with self.lock:
-            return self.memory.read(address)
+        return self.memory.read(address)
 
     # Método para escribir un bloque en la memoria principal
     def write(self, address, data):
-        with self.lock:
-            self.memory.write(address, data)
+        self.memory.write(address, data)
+        # Refrescar la interfaz
+        self.memory_frame.update(address)
 
     # Metodo para agregar request a la cola
     def add_request(self, sender, message_type, address, detail=None):

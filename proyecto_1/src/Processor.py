@@ -6,11 +6,12 @@ from Utils import *
 
 
 class Processor():
-    def __init__(self, id, bus):
+    def __init__(self, id, bus, cache_frame):
         self.id = id
         self.cache = Cache(id)
+        self.cache_frame = cache_frame
         self.bus = bus
-        self.controller = Controller(self.cache, self.bus)
+        self.controller = Controller(self.bus, self.cache, self.cache_frame)
         self.running = False
 
     def operate(self):

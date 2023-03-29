@@ -6,10 +6,12 @@ import time
 
 
 class System:
-    def __init__(self):
-        self.bus = Bus()
+    def __init__(self, cache_frames, memory_frame):
+        self.bus = Bus(memory_frame)
+        self.num_processors = 2
+        self.cache_frames = cache_frames
         # Creamos 4 instancias de Procesador
-        self.processors = [Processor(i, self.bus) for i in range(2)]
+        self.processors = [Processor(i, self.bus, self.cache_frames[i]) for i in range(self.num_processors)]
         # Creamos un hilo para cada instancia de Procesador
         self.threads = [threading.Thread(target=p.execute) for p in self.processors]
         # Conectamos todos los procesadores al bus
@@ -51,12 +53,3 @@ class System:
                 running = False
                 continue
             self.execute()
-
-
-# Función principal
-if __name__ == "__main__":
-    system = System()
-    # Execute in manual mode
-    system.execute_manual()
-    # Execute in automatic mode with one cycle every 2 seconds
-    # system.execute_auto(2)
