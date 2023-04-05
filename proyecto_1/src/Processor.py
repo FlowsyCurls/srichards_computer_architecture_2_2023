@@ -5,7 +5,7 @@ from Controller import Controller
 from Utils import *
 
 
-class Processor():
+class Processor:
     def __init__(self, id, bus, cache_frame):
         self.id = id
         self.cache = Cache(id)
@@ -18,20 +18,21 @@ class Processor():
         # Generar una dirección aleatoria entre 0 y 7
         address = random.randint(0, 7)
         # Generar una operación aleatoria (lectura o escritura)
-        operation = random.choice(['read', 'write', 'calc'])
-        # operation = 'write'
-        if operation == 'read':
-            Instruction = f'READ  {print_address_bin(address)}'
+        operation = random.choice(["read", "write", "calc"])
+        operation = "read"
+        if operation == "read":
+            Instruction = f"READ  {print_address_bin(address)}"
             self.read(address)
-        elif operation == 'write':
+        elif operation == "write":
             n = random.randint(0, 65535)
-            Instruction = f'WRITE {print_address_bin(address)}; {print_data_hex(n)}'
+            Instruction = f"WRITE {print_address_bin(address)}; {print_data_hex(n)}"
             self.write(address, n)
-        elif operation == 'calc':
-            Instruction = 'CALC'
+        elif operation == "calc":
+            Instruction = "CALC"
             self.calc()
-        print(f"\033[{MAGENTA}\nProcessor {self.id}\033[0m\033[{WHITE}  {Instruction}\033[0m",)
-
+        print(
+            f"\033[{MAGENTA}\nProcessor {self.id}\033[0m\033[{WHITE}  {Instruction}\033[0m",
+        )
 
     def read(self, address):
         self.controller.read(self, address)
@@ -47,6 +48,3 @@ class Processor():
         self.operate()
         time.sleep(0.1)
         self.running = False
-            
-
-

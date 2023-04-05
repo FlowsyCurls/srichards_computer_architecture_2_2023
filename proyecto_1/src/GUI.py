@@ -1,23 +1,9 @@
 # Importing the tkinter module
-import math
 import tkinter as tk
-from tkinter import CENTER, ttk
+from tkinter import ttk
+from Utils import *
 
-import tkinter.font as font
-
-from PIL import Image, ImageTk
-from Sistem import System
-
-MEMORY_SIZE = 8
-CACHE_SIZE = 4
-NUM_CPU = 4
-FONT = "Century Gothic"
-BLACK = "black"
-WHITE = "white"
-YELLOW = "yellow"
-padding = 1
-height = 28
-# print(font.families())
+from System import System
 
 
 class Table:
@@ -25,12 +11,14 @@ class Table:
         self.master = master
         self.rows = len(data)
         self.cols = len(headers)
+        self.data = data
+        self.frames = []
         self.labels = []
         self.StringVars = []
 
         Canvas = tk.Canvas(
             master,
-            background=BLACK,
+            background=BORDER,
             highlightthickness=1,
             highlightbackground="black",
         )
@@ -42,7 +30,7 @@ class Table:
                 Canvas,
                 width=cols_width[col],
                 height=height,
-                bg=BLACK,
+                bg=BORDER,
             )
             frame.grid_propagate(False)  # Evita que el Frame cambie de tamaño
             frame.grid(row=0, column=col)
@@ -50,8 +38,8 @@ class Table:
             label = tk.Label(
                 frame,
                 text=headers[col],
-                bg=BLACK,
-                fg=WHITE,
+                bg=BORDER,
+                fg=BACKGROUND,
                 font=(FONT, 9, "bold"),
             ).place(relx=0.5, rely=0.5, anchor="center")
 
@@ -62,7 +50,7 @@ class Table:
                     Canvas,
                     width=cols_width[col],
                     height=height,
-                    bg=WHITE,
+                    bg=BACKGROUND,
                 )
                 frame.grid_propagate(False)  # Evita que el Frame cambie de tamaño
                 frame.grid(row=row + 1, column=col, pady=(0, padding))
@@ -79,22 +67,70 @@ class Table:
                 label = tk.Label(
                     frame,
                     text=data[row][col],
-                    bg=WHITE,
-                    fg=BLACK,
+                    bg=BACKGROUND,
+                    fg=BORDER,
                     font=(FONT, 10),
-                ).place(relx=0.5, rely=0.5, anchor="center")
+                )
+                label.place(relx=0.5, rely=0.5, anchor="center")
 
+                self.frames.append(frame)
                 self.labels.append(label)
 
-    def get(self, row, col):
-        index = row * self.cols + col
-        return self.entries[index].get()
+    def get(self, address):
+        # Get index de la fila
+        # k ->  fila X, columna 0
+        # i * num de cols = fila 0, 1, 2...
+        k = next(
+            (
+                i * self.cols
+                for i, d in enumerate(self.data)
+                if print_address_bin(address) == d[0]
+            ),
+            0,
+        )
+        return k
 
-    def set(self, row, col, value):
-        index = row * self.cols + col
-        print(index)
-        self.entries[index].delete(0, tk.END)
-        self.entries[index].insert(0, value)
+    # Se asigna el color de una vez
+    def read(self, address, delay):
+        k = self.get(address=address)
+        h = self.cols - 1
+        while h != -1:
+            self.update_bg_color(self.frames[k + h], HIGHLIGHT_READ)
+            self.update_bg_color(self.labels[k + h], HIGHLIGHT_READ)
+            # Tiempo en el que vuelve a la normalidad
+            self.update_bg_color_after(self.frames[k + h], BACKGROUND, delay)
+            self.update_bg_color_after(self.labels[k + h], BACKGROUND, delay)
+
+            # Decrementar
+            h -= 1
+
+    def write(self, address, load, delay):
+        k = self.get(address=address)
+        # Set all cols
+        # k -> address
+        # k + 1 -> dato 1
+        # k + 2 -> dato 2
+        # k + 3 -> dato 3
+        # h = self.cols - 1
+        # while h != -1:
+        #     self.frames[k + h].config(bg=HIGHLIGHT_WRITE)
+        #     self.labels[k + h].config(bg=HIGHLIGHT_WRITE)
+
+        #     # Tiempo en el que vuelve a la normalidad
+        #     self.frames[k + h].after(5000, self._set_data, self.frames[k + h], load[h])
+        #     self.labels[k + h].after(5000, self._set_data, self.frames[k + h], load[h])
+
+        #     # Decrementar
+        #     h -= 1
+
+    def _set_data(self, widget, data):
+        widget.config(text=data, bg=BACKGROUND)
+
+    def update_bg_color(self, widget, color):
+        widget.config(bg=color)
+
+    def update_bg_color_after(self, widget, color, delay):
+        widget.after(delay, self.update_bg_color, widget, color)
 
 
 class FrameMemory(ttk.Frame):
@@ -103,9 +139,9 @@ class FrameMemory(ttk.Frame):
 
         Canvas = tk.Canvas(
             self,
-            background=WHITE,
+            background=BACKGROUND,
             highlightthickness=1,
-            highlightbackground=BLACK,
+            highlightbackground=BORDER,
         )
         Canvas.pack()
 
@@ -113,29 +149,34 @@ class FrameMemory(ttk.Frame):
         tk.Label(
             Canvas,
             text="Memory",
-            bg=WHITE,
-            fg=BLACK,
+            bg=BACKGROUND,
+            fg=BORDER,
             font=(FONT, 11, "bold"),
         ).grid(row=0, column=0, padx=10, pady=(4, 0), sticky="w")
 
         # Inicial DATA
         headers = ["address", "data"]
         self.data = [
-            ("000", "0000"),
-            ("001", "0000"),
-            ("002", "0000"),
-            ("003", "0000"),
-            ("004", "0000"),
-            ("005", "0000"),
-            ("006", "0000"),
-            ("007", "0000"),
-            ("008", "0000"),
+            ["000", "0000"],
+            ["001", "0000"],
+            ["010", "0000"],
+            ["011", "0000"],
+            ["100", "0000"],
+            ["101", "0000"],
+            ["110", "0000"],
+            ["111", "0000"],
         ]
         cols_width = [80, 70]
 
         self.table = Table(
             master=Canvas, headers=headers, data=self.data, cols_width=cols_width
         )
+
+    def read(self, address, delay):
+        self.table.read(address=address, delay=delay)
+
+    # def clear(self, k):
+    # self.table.clear(k=k)
 
 
 class FrameCache(ttk.Frame):
@@ -144,9 +185,9 @@ class FrameCache(ttk.Frame):
 
         Canvas = tk.Canvas(
             self,
-            background=WHITE,
+            background=BACKGROUND,
             highlightthickness=1,
-            highlightbackground=BLACK,
+            highlightbackground=BORDER,
         )
         Canvas.pack()
 
@@ -154,8 +195,8 @@ class FrameCache(ttk.Frame):
         tk.Label(
             Canvas,
             text=f"N{id}",
-            bg=WHITE,
-            fg=BLACK,
+            bg=BACKGROUND,
+            fg=BORDER,
             font=(FONT, 10, "bold"),
         ).grid(row=0, column=0, padx=10, pady=(4, 0), sticky="w")
 
@@ -173,6 +214,12 @@ class FrameCache(ttk.Frame):
             master=Canvas, headers=headers, data=self.data, cols_width=cols_width
         )
 
+    def read(self, address):
+        self.table.read(address=address, delay=5000)
+
+    # def write(self, address, color, time):
+    #     self.table.set(address=address, color=color, time=time)
+
 
 class App(tk.Tk):
     def __init__(self):
@@ -182,53 +229,33 @@ class App(tk.Tk):
         self.main_canva.grid_propagate(True)
 
         # Memory
-        self.frame_memory = FrameMemory(self.main_canva)
-        self.frame_memory.place(x=500, y=300)
+        self.memory_frame = FrameMemory(self.main_canva)
+        self.memory_frame.place(x=500, y=300)
 
         # Cache
-        self.frames = []
-        for i in range(4):
+        self.cache_frames = []
+        for i in range(NUM_CPU):
             frame = FrameCache(self.main_canva, i)
             frame.place(x=30 + (i * 320), y=30)
-            self.frames.append(frame)
+            self.cache_frames.append(frame)
 
         # Bus
         x1, y1, x2, y2 = 55, 250, 1250, 265
-        self.main_canva.create_rectangle(x1, y1, x2, y2, fill=BLACK)
+        self.main_canva.create_rectangle(x1, y1, x2, y2, fill=BORDER)
         self.main_canva.create_polygon(
-            x1, y1 - 8, x1, y2 + 7, x1 - 15, y1 + 8, fill=BLACK
+            x1, y1 - 8, x1, y2 + 7, x1 - 15, y1 + 8, fill=BORDER
         )
         self.main_canva.create_polygon(
-            x2, y1 - 8, x2, y2 + 7, x2 + 15, y1 + 8, fill=BLACK
+            x2, y1 - 8, x2, y2 + 7, x2 + 15, y1 + 8, fill=BORDER
         )
 
-        # self.frames[0].update(1, 0x1000, 1, 0x0F, 0xA5)
-        # self.frames[1].update(2, 0x2000, 2, 0x55, 0x33)
-        # self.frames[2].update(3, 0x3000, 3, 0xAA, 0xCC)
-        # self.frames[3].update(4, 0x4000, 4, 0x11, 0x22)
+        # Set system
+        self.sys = System(
+            cache_frames=self.cache_frames, memory_frame=self.memory_frame
+        )
 
-# # CPU
-# self.frames = []
-# for i in range(4):
-#     frame = FrameCache(self)
-#     frame.pack(side=tk.LEFT, padx=10, pady=10)
-#     self.frames.append(frame)
-
-# self.frames[0].update(1, 0x1000, 1, 0x0F, 0xA5)
-# self.frames[1].update(2, 0x2000, 2, 0x55, 0x33)
-# self.frames[2].update(3, 0x3000, 3, 0xAA, 0xCC)
-# self.frames[3].update(4, 0x4000, 4, 0x11, 0x22)
-
-# Variable del sistema
-# self.system = System(self.frames, self.memory_frame)
-
-# Variables graficas
-# text =
-# {
-#   :
-# }
-
-# # Execute in manual mode
-# self.system.execute_manual()
-# Execute in automatic mode with one cycle every 2 seconds
-# system.execute_auto(2)
+    # Define a function to execute the code in a thread
+    def start_system(self):
+        # Execute in manual mode
+        self.sys.execute_manual()
+        # self.sys.execute_auto(2)

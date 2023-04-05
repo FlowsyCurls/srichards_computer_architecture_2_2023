@@ -25,13 +25,17 @@ class Bus:
 
     # Método para leer un bloque de la memoria principal
     def read(self, address):
-        return self.memory.read(address)
+        # Refrescar la interfaz
+        delay = random.uniform(4, 7)
+        self.memory_frame.read(address=address, delay=int(delay * 1000))
+        return self.memory.read(address=address, delay=delay)
 
     # Método para escribir un bloque en la memoria principal
     def write(self, address, data):
-        self.memory.write(address, data)
         # Refrescar la interfaz
-        self.memory_frame.update(address)
+        delay = random.uniform(4, 7)
+        # self.memory_frame.write(address=address, color=HIGHLIGHT_READ, delay=delay)
+        self.memory.write(address=address, data=data, delay=delay)
 
     # Metodo para agregar request a la cola
     def add_request(self, sender, message_type, address, detail=None):
@@ -50,7 +54,8 @@ class Bus:
         for processor in self.processors:
             if processor != sender:
                 processor.controller._process_message(
-                    sender, message_type, address, detail)
+                    sender, message_type, address, detail
+                )
         return True
 
     # Método para enviar un mensaje a un procesador en especific
@@ -58,8 +63,7 @@ class Bus:
     def _process_response(self):
         response = self.response_queue.get()
         [src_id, target, message_type, address, detail] = response
-        target.controller._process_message(
-            src_id, message_type, address, detail)
+        target.controller._process_message(src_id, message_type, address, detail)
 
     def _process_taks(self):
         while True:
@@ -79,7 +83,6 @@ class Bus:
             self._process_response()
 
     def run(self):
-
         # Iniciar hilos de procesamiento de solicitudes
         for i in range(len(self.processors)):
             t = threading.Thread(target=self._process_taks)

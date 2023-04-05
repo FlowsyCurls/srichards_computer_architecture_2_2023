@@ -1,17 +1,20 @@
 import threading
 from Processor import Processor
 from Bus import Bus
-
+from Utils import NUM_CPU
 import time
 
 
 class System:
     def __init__(self, cache_frames, memory_frame):
         self.bus = Bus(memory_frame)
-        self.num_processors = 2
+        self.num_processors = NUM_CPU
         self.cache_frames = cache_frames
         # Creamos 4 instancias de Procesador
-        self.processors = [Processor(i, self.bus, self.cache_frames[i]) for i in range(self.num_processors)]
+        self.processors = [
+            Processor(i, self.bus, self.cache_frames[i])
+            for i in range(self.num_processors)
+        ]
         # Creamos un hilo para cada instancia de Procesador
         self.threads = [threading.Thread(target=p.execute) for p in self.processors]
         # Conectamos todos los procesadores al bus
@@ -20,7 +23,6 @@ class System:
         self.auto_mode = False
         # Empezar el bus
         self.bus.run()
-
 
     def execute(self):
         for processor, thread in zip(self.processors, self.threads):
@@ -46,10 +48,10 @@ class System:
         running = True
         while running:
             text = input("Press ENTER to execute one cycle of processors\n\n")
-            if text == 's':
+            if text == "s":
                 self.bus.state()
                 time.sleep(5)
-            if text == 'q':
+            if text == "q":
                 running = False
                 continue
             self.execute()
