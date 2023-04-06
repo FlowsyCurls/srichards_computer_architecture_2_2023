@@ -19,7 +19,7 @@ class Processor:
         address = random.randint(0, 7)
         # Generar una operación aleatoria (lectura o escritura)
         operation = random.choice(["read", "write", "calc"])
-        operation = "write"
+        operation = "read"
         if operation == "read":
             Instruction = f"READ  {print_address_bin(address)}"
             self.read(address)

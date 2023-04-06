@@ -76,23 +76,21 @@ class Table:
                 self.frames.append(frame)
                 self.labels.append(label)
 
-    def get(self, address):
+    def get(self, block):
         # Get index de la fila
         # k ->  fila X, columna 0
         # i * num de cols = fila 0, 1, 2...
-        k = next(
-            (
-                i * self.cols
-                for i, d in enumerate(self.data)
-                if print_address_bin(address) == d[0]
-            ),
-            0,
-        )
+        k = 0
+        for i in range(0, len(self.data), self.cols - 1):
+            if block == self.data[i][0]:
+                print(i, self.data[i][0], block)
+                k = i * self.cols
         return k
 
     # Se asigna el color de una vez
-    def read(self, address, delay):
-        k = self.get(address=address)
+    def read(self, block, delay):
+        k = self.get(block=block)
+        print("0000000000-----------", k)
         h = self.cols - 1
         while h != -1:
             self.update_bg_color(self.frames[k + h], HIGHLIGHT_READ)
@@ -104,8 +102,8 @@ class Table:
             # Decrementar
             h -= 1
 
-    def write(self, address, block, delay):
-        k = self.get(address=address)
+    def write(self, block, info, delay):
+        k = self.get(block=block)
         # Set all cols
         # k -> address
         # k + 1 -> dato 1
@@ -118,7 +116,7 @@ class Table:
 
             # Tiempo en el que vuelve a la normalidad
             self.update_bg_color_after(self.frames[k + h], BACKGROUND, delay)
-            self.update_text_and_bg_color_after(self.labels[k + h], block[h], delay)
+            self.update_text_and_bg_color_after(self.labels[k + h], info[h], delay)
 
             # Decrementar
             h -= 1
@@ -176,10 +174,10 @@ class FrameMemory(ttk.Frame):
         )
 
     def read(self, address, delay):
-        self.table.read(address=address, delay=delay)
+        self.table.read(block=address, delay=delay)
 
-    def write(self, address, block, delay):
-        self.table.write(address=address, block=block, delay=delay)
+    def write(self, address, info, delay):
+        self.table.write(block=address, info=info, delay=delay)
 
 
 class FrameCache(ttk.Frame):
@@ -217,11 +215,11 @@ class FrameCache(ttk.Frame):
             master=Canvas, headers=headers, data=self.data, cols_width=cols_width
         )
 
-    def read(self, address):
-        self.table.read(address=address, delay=5000)
+    def read(self, block):
+        self.table.read(block=block, delay=1500)
 
-    # def write(self, address, color, time):
-    #     self.table.set(address=address, color=color, time=time)
+    def write(self, block, info):
+        self.table.write(block=block, info=info, delay=2000)
 
 
 class App(tk.Tk):

@@ -25,7 +25,7 @@ class Controller:
             if not remote:
                 text = f" ✔️  Read Hit!   Cache {sender.id}    block: {block.id}    addr: {print_address_bin(address)}    data: {print_data_hex(block.data)}"
                 print(f"\033[{GREEN}{text}\033[0m")
-
+                self.cache_frame.read(block=("B{0}").format(block.id))
             return [True, block]
 
         else:
@@ -147,7 +147,7 @@ class Controller:
         # Escribo el dato consultado, con política de escritura
         block = self.cache.write(address, detail, State.SHARED)
         # Update interfaz
-        self.cache_frame.read(address=address)
+        # self.cache_frame.write(block=block, [State.SHARED])
 
         if block is None:
             print(f"El procesador {src_id} ha brindado el bloque.")
