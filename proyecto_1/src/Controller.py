@@ -53,33 +53,27 @@ class Controller:
     def write(self, sender, address, data):
         # Verificar si el bloque está en caché
         [hit, block] = self.cache.read(address)
-        # print("procesador", self.cache.id, 0)
         # Guardar el valor de escritura
         self.tmp = data
-        # print("procesador", self.cache.id, 1)
 
         if hit:
             # Si el bloque está, se verifica el estado.
             prev = block.data
-            # print("procesador", self.cache.id, 2)
 
             # Si está en S, O y escribe pasa al estado M e invalida todo lo demás.
             if block.state in [State.SHARED, State.OWNED]:
                 # Envia mensaje de invalidacion
                 self.processors_list = []
                 self.bus.add_request(sender, MessageType.Inv, address, "noreply")
-            # print("procesador", self.cache.id, 3)
 
             block = self.cache.write_local(address, self.tmp)
             text = f" ✔️  Write Hit!   Cache {sender.id}    block: {block.id}    addr: {print_address_bin(address)}    data: {print_data_hex(prev)}  ➜  {print_data_hex(block.data)}"
             print(f"\033[{GREEN}{text}\033[0m")
-            # print("procesador", self.cache.id, 4)
 
             # Animacion de escritura de la cache local
             self.write_animation(block)
 
         else:
-            # print("procesador", self.cache.id, 5)
             # Si el bloque no está, se invalidan los demas con esta direccion
             text = f" ❌  Write Miss!   Cache {sender.id}   addr: {print_address_bin(address)}    data: {print_data_hex(data)}"
             print(f"\033[{RED}{text}\033[0m")
@@ -87,7 +81,6 @@ class Controller:
             self.processors_list = []
             # Se realiza un request en esta direccion en los otros procesadores
             self.bus.add_request(sender, MessageType.Inv, address)
-            # print("procesador", self.cache.id, 6)
 
     def write_animation(self, block, color=HIGHLIGHT_WRITE):
         # Animacion de escritura de la cache local
@@ -155,13 +148,10 @@ class Controller:
         text = f"   ❣️\tN{self.cache.id}  from   N{src_id}   ⟵   {detail}"
         color = RED if detail == "miss" else YELLOW
         print(f"\033[{color}{text}\033[0m")
-        # print("procesador", self.cache.id, "a")
         # Si el mensaje es un miss
         if detail == "miss":
-            # print("procesador", self.cache.id, "b")
             self.processors_list.append(src_id)
             if len(self.processors_list) == (self.nodes_quantity - 1):
-                # print("procesador", self.cache.id, "c")
                 # Si no se encuentra en ninguno de los procesadores
                 # Se lee desde memoria y pasa a un estado exclusivo
                 # data = self.bus.read(address)
@@ -169,13 +159,10 @@ class Controller:
 
                 self.mem_action_done = False
                 self.bus.add_mem_request(self, MessageType.RD, address)
-                # print("procesador", self.cache.id, "d")
                 while not self.mem_action_done:
                     time.sleep(CYCLE_DURATION)
-                # print("procesador", self.cache.id, "e")
                 data = self.tmp  # dato retornado de peticion de lectura a la memoria.
                 [resp, block] = self.cache.write(address, data, State.EXCLUSIVE)
-                # print("procesador", self.cache.id, "f")
 
                 if resp is True:
                     print(f"El bloque se ha obtenido de memoria.\n")
@@ -251,35 +238,27 @@ class Controller:
     def _process_invalidation(self, sender, address, detail):
         # Verificar si el bloque está en caché
         [hit, block] = self.cache.read(address)
-        print("procesador", self.cache.id, "z")
         if hit:
             # Si el bloque está, se analiza el estado.
             if block.state in [State.OWNED, State.MODIFIED]:
-                # print("procesador", self.cache.id, "y")
-
                 # Si el bloque está en O o M, se hace WB
                 text = f"    ⤵️    N{sender.id} anula a N{self.cache.id}\n        Write-Back!    Cache {self.cache.id}    {block}"
                 print(f"\033[{CIAN}{text}\033[0m")
                 # WB section
                 self.mem_action_done = False
                 self.bus.add_mem_request(self, MessageType.WB, address, block.data)
-                # print("procesador", self.cache.id, "x")
                 while not self.mem_action_done:
                     time.sleep(CYCLE_DURATION)
-                    # print("procesador", self.cache.id, "w")
             block.invalidate()
             self.write_animation(block, HIGHLIGHT_INV)
-            # print("procesador", self.cache.id, "v")
 
         if detail == "noreply":
-            # print("procesador", self.cache.id, "u")
             self.running = False
             return
 
         self.bus.add_response(
             self.cache.id, sender, MessageType.InvResp, address, block
         )
-        # print("procesador", self.cache.id, "t")
         self.running = False
 
     # Metodo para escribir una vez la invalidacion haya finalizado.
@@ -291,7 +270,6 @@ class Controller:
 
         # Si no se ha recibido mensaje de todos los procesadores, esperar.
         self.processors_list.append(src_id)
-        # print("Tamano ", len(self.processors_list))
         if len(self.processors_list) == (self.nodes_quantity - 1):
             self.processors_list = []
 
