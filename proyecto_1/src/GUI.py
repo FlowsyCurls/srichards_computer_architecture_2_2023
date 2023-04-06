@@ -100,7 +100,7 @@ class Table:
             # Decrementar
             h -= 1
 
-    def write(self, block, info, delay):
+    def write(self, block, info, delay, color):
         k = self.get(block=block)
         # Set all cols
         # k -> address
@@ -109,12 +109,56 @@ class Table:
         # k + 3 -> dato 3
         h = self.cols - 1
         while h != -1:
-            self.update_bg_color(self.frames[k + h], HIGHLIGHT_WRITE)
-            self.update_bg_color(self.labels[k + h], HIGHLIGHT_WRITE)
+            self.update_bg_color(self.frames[k + h], color)
+            self.update_bg_color(self.labels[k + h], color)
 
             # Tiempo en el que vuelve a la normalidad
             self.update_bg_color_after(self.frames[k + h], BACKGROUND, delay)
             self.update_text_and_bg_color_after(self.labels[k + h], info[h], delay)
+
+            # if h == 1:
+            #     self.update_bg_color(self.frames[k + 0], HIGHLIGHT_WRITE)
+            #     self.update_bg_color(self.frames[k + 1], HIGHLIGHT_WRITE)
+            #     self.update_bg_color(self.frames[k + 2], HIGHLIGHT_WRITE)
+            #     self.update_bg_color(self.frames[k + 3], HIGHLIGHT_WRITE)
+            #     self.update_bg_color(self.labels[k + 0], HIGHLIGHT_WRITE)
+            #     self.update_bg_color(self.labels[k + 1], HIGHLIGHT_WRITE)
+            #     self.update_bg_color(self.labels[k + 2], HIGHLIGHT_WRITE)
+            #     self.update_bg_color(self.labels[k + 3], HIGHLIGHT_WRITE)
+            #     # Tiempo en el que vuelve a la normalidad
+            #     time.sleep(CACHE_WR_DELAY * 1000)
+            #     self.update_bg_color(self.frames[k + 0], BACKGROUND)
+            #     self.update_bg_color(self.frames[k + 1], BACKGROUND)
+            #     self.update_bg_color(self.frames[k + 2], BACKGROUND)
+            #     self.update_bg_color(self.frames[k + 3], BACKGROUND)
+            #     self.update_bg_color(self.labels[k + 0], BACKGROUND)
+            #     self.update_bg_color(self.labels[k + 1], BACKGROUND)
+            #     self.update_bg_color(self.labels[k + 2], BACKGROUND)
+            #     self.update_bg_color(self.labels[k + 3], BACKGROUND)
+
+            # if h == 4:
+            #     self.update_bg_color(self.frames[k + 0], HIGHLIGHT_WRITE)
+            #     self.update_bg_color(self.frames[k + 1], HIGHLIGHT_WRITE)
+            #     self.update_bg_color(self.frames[k + 2], HIGHLIGHT_WRITE)
+            #     self.update_bg_color(self.frames[k + 3], HIGHLIGHT_WRITE)
+            #     self.update_bg_color(self.frames[k + 4], HIGHLIGHT_WRITE)
+            #     self.update_bg_color(self.labels[k + 0], HIGHLIGHT_WRITE)
+            #     self.update_bg_color(self.labels[k + 1], HIGHLIGHT_WRITE)
+            #     self.update_bg_color(self.labels[k + 2], HIGHLIGHT_WRITE)
+            #     self.update_bg_color(self.labels[k + 3], HIGHLIGHT_WRITE)
+            #     self.update_bg_color(self.labels[k + 4], HIGHLIGHT_WRITE)
+            #     # Tiempo en el que vuelve a la normalidad
+            #     time.sleep(CACHE_WR_DELAY)
+            #     self.update_bg_color(self.frames[k + 0], BACKGROUND)
+            #     self.update_bg_color(self.frames[k + 1], BACKGROUND)
+            #     self.update_bg_color(self.frames[k + 2], BACKGROUND)
+            #     self.update_bg_color(self.frames[k + 3], BACKGROUND)
+            #     self.update_bg_color(self.frames[k + 4], BACKGROUND)
+            #     self.update_bg_color(self.labels[k + 0], BACKGROUND)
+            #     self.update_bg_color(self.labels[k + 1], BACKGROUND)
+            #     self.update_bg_color(self.labels[k + 2], BACKGROUND)
+            #     self.update_bg_color(self.labels[k + 3], BACKGROUND)
+            #     self.update_bg_color(self.labels[k + 4], BACKGROUND)
 
             # Decrementar
             h -= 1
@@ -177,7 +221,7 @@ class FrameMemory(ttk.Frame):
         self.table.read(block=address, delay=delay)
 
     def write(self, address, info, delay):
-        self.table.write(block=address, info=info, delay=delay)
+        self.table.write(block=address, info=info, delay=delay, color=HIGHLIGHT_WRITE)
 
 
 class FrameCache(ttk.Frame):
@@ -201,6 +245,16 @@ class FrameCache(ttk.Frame):
             font=(FONT, 10, "bold"),
         ).grid(row=0, column=0, padx=10, pady=(4, 0), sticky="w")
 
+        # Instr
+        self.inst = tk.Label(
+            Canvas,
+            text="",
+            bg=BACKGROUND,
+            fg="blue",
+            font=(FONT, 10, "bold"),
+        )
+        self.inst.grid(row=0, column=0, pady=(4, 0))
+
         # Inicial Cache Data
         headers = ["", "state", "address", "set", "data"]
         self.data = [
@@ -216,10 +270,15 @@ class FrameCache(ttk.Frame):
         )
 
     def read(self, block):
-        self.table.read(block=block, delay=600)
+        self.table.read(block=block, delay=int(CACHE_RD_DELAY * 1000))
 
-    def write(self, block, info):
-        self.table.write(block=block, info=info, delay=900)
+    def write(self, block, info, color):
+        self.table.write(
+            block=block, info=info, delay=int(CACHE_WR_DELAY * 1000), color=color
+        )
+
+    def set_instruction(self, inst):
+        self.inst.config(text=inst)
 
 
 class App(tk.Tk):

@@ -25,13 +25,23 @@ class System:
         self.bus.run()
 
     def execute(self):
+        # Wait until every processor stopped running
+        # while any(processor.controller.running for processor in self.processors):
+        #     (
+        #         print(processor.id, processor.controller.running)
+        #         for processor in self.processors
+        #     )
+        #     time.sleep(2)
+
         for processor, thread in zip(self.processors, self.threads):
-            if not processor.running:
+            if not processor.controller.running:
                 thread = threading.Thread(target=processor.execute)
                 thread.start()
                 self.threads[processor.id] = thread
+                time.sleep(0.3)
             else:
-                # Processor is still running, skip this cycle
+                #     # Processor is still running, skip this cycle
+                print("Running", processor.id)
                 pass
 
         for thread in self.threads:

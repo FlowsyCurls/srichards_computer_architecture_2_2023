@@ -15,7 +15,9 @@ WHITE = "37m"
 MEMORY_SIZE = 8
 CACHE_SIZE = 4
 NUM_CPU = 2
-CYCLE_DURATION = 700  # ms
+CYCLE_DURATION = 0.800  # ms
+CACHE_RD_DELAY = 0.900
+CACHE_WR_DELAY = 1.200
 # GUI
 FONT = "Century Gothic"
 BORDER = "black"
@@ -23,8 +25,9 @@ BACKGROUND = "white"
 FONTGROUND = "black"
 HIGHLIGHT = "yellow"
 HIGHLIGHT_READ = "yellow"
-HIGHLIGHT_WRITE = "green"
-
+HIGHLIGHT_WRITE = "#1df836"
+HIGHLIGHT_RQ = "orange"
+HIGHLIGHT_INV = "red"
 padding = 1
 height = 28
 
@@ -57,3 +60,5 @@ class MessageType(Enum):
     RdResp = 1  # Respuesta a solicitud de lectura
     Inv = 3  # Invaliación de bloque
     InvResp = 4  # Respues a la invalicacion de un bloque
+    WB = 5
+    RD = 6  # Solicitud lectura a memoria

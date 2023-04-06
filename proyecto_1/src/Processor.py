@@ -11,29 +11,33 @@ class Processor:
         self.cache = Cache(id)
         self.cache_frame = cache_frame
         self.bus = bus
-        self.controller = Controller(self.bus, self.cache, self.cache_frame)
-        self.running = False
-
+        self.controller = Controller(running=False, bus=self.bus, cache=self.cache, cache_frame=self.cache_frame)
+        self.Instruction = ""
 
     def operate(self):
         # Generar una dirección aleatoria entre 0 y 7
         address = random.randint(0, 7)
         # Generar una operación aleatoria (lectura o escritura)
         operation = random.choice(["read", "write"])
-        # operation = "write"
+        # operation = "read"
         if operation == "read":
-            Instruction = f"READ  {print_address_bin(address)}"
+            self.Instruction = f"READ  {print_address_bin(address)}"
             self.read(address)
         elif operation == "write":
             n = random.randint(0, 65535)
-            Instruction = f"WRITE {print_address_bin(address)}; {print_data_hex(n)}"
+            self.Instruction = (
+                f"WRITE {print_address_bin(address)}; {print_data_hex(n)}"
+            )
             self.write(address, n)
         elif operation == "calc":
-            Instruction = "CALC"
+            self.Instruction = "CALC"
             self.calc()
+
         print(
-            f"\033[{MAGENTA}\nProcessor {self.id}\033[0m\033[{WHITE}  {Instruction}\033[0m",
+            f"\033[{MAGENTA}\nProcessor {self.id}\033[0m\033[{WHITE}  {self.Instruction}\033[0m",
         )
+        # Actualizar la instruction en pantalla
+        self.cache_frame.set_instruction(self.Instruction)
 
     def read(self, address):
         self.controller.read(self, address)
@@ -45,7 +49,5 @@ class Processor:
         time.sleep(random.uniform(0.001, 0.01))
 
     def execute(self):
-        self.running = True
+        self.controller.running = True
         self.operate()
-        time.sleep(0.1)
-        self.running = False
