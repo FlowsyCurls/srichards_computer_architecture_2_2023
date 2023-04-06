@@ -30,8 +30,9 @@ class Controller:
                     self.write_animation(block, HIGHLIGHT_RQ)
 
             if not remote:
-                text = f" ✔️  Read Hit!   Cache {sender.id}    block: {block.id}    {block.state}    addr: {print_address_bin(address)}    data: {print_data_hex(block.data)}"
-                print(f"\033[{GREEN}{text}\033[0m")
+                # text = f" ✔️  Read Hit!   Cache {sender.id}    block: {block.id}    {block.state}    addr: {print_address_bin(address)}    data: {print_data_hex(block.data)}"
+                # print(f"\033[{GREEN}{text}\033[0m")
+                self.cache_frame.hit_animation()
                 # Animacion de lectura de la cache local
                 self.cache_frame.read(block=f"B{block.id}")
                 time.sleep(CACHE_RD_DELAY)
@@ -41,9 +42,9 @@ class Controller:
         else:
             # Si no esta el block
             if not remote:
-                text = f" ❌  Read Miss!   Cache {sender.id}   addr: {print_address_bin(address)}"
-                print(f"\033[{RED}{text}\033[0m")
-
+                # text = f" ❌  Read Miss!   Cache {sender.id}   addr: {print_address_bin(address)}"
+                # print(f"\033[{RED}{text}\033[0m")
+                self.cache_frame.miss_animation()
                 # Si el bloque NO está en caché, se solicita a otro.
                 self.processors_list = []
                 self.bus.add_request(sender, MessageType.RdReq, address)
@@ -67,17 +68,17 @@ class Controller:
                 self.bus.add_request(sender, MessageType.Inv, address, "noreply")
 
             block = self.cache.write_local(address, self.tmp)
-            text = f" ✔️  Write Hit!   Cache {sender.id}    block: {block.id}    addr: {print_address_bin(address)}    data: {print_data_hex(prev)}  ➜  {print_data_hex(block.data)}"
-            print(f"\033[{GREEN}{text}\033[0m")
-
+            # text = f" ✔️  Write Hit!   Cache {sender.id}    block: {block.id}    addr: {print_address_bin(address)}    data: {print_data_hex(prev)}  ➜  {print_data_hex(block.data)}"
+            # print(f"\033[{GREEN}{text}\033[0m")
+            self.cache_frame.hit_animation()
             # Animacion de escritura de la cache local
             self.write_animation(block)
 
         else:
             # Si el bloque no está, se invalidan los demas con esta direccion
-            text = f" ❌  Write Miss!   Cache {sender.id}   addr: {print_address_bin(address)}    data: {print_data_hex(data)}"
-            print(f"\033[{RED}{text}\033[0m")
-
+            # text = f" ❌  Write Miss!   Cache {sender.id}   addr: {print_address_bin(address)}    data: {print_data_hex(data)}"
+            # print(f"\033[{RED}{text}\033[0m")
+            self.cache_frame.miss_animation()
             self.processors_list = []
             # Se realiza un request en esta direccion en los otros procesadores
             self.bus.add_request(sender, MessageType.Inv, address)
@@ -117,8 +118,8 @@ class Controller:
     # Método privado para procesar una solicitud de lectura
 
     def _process_read_request(self, sender, address):
-        text = f" ▶  N{sender.id}   Read Request  ⟶   {print_address_bin(address)}"
-        print(f"\033[{BLUE}{text}\033[0m")
+        # text = f" ▶  N{sender.id}   Read Request  ⟶   {print_address_bin(address)}"
+        # print(f"\033[{BLUE}{text}\033[0m")
         # Verificar si el bloque está en caché, es una consulta desde afuera.
         [hit, block] = self.read(sender, address, remote=True)
 
@@ -145,9 +146,9 @@ class Controller:
 
     def _process_read_response(self, src_id, address, detail):
         # Print
-        text = f"   ❣️\tN{self.cache.id}  from   N{src_id}   ⟵   {detail}"
-        color = RED if detail == "miss" else YELLOW
-        print(f"\033[{color}{text}\033[0m")
+        # text = f"   ❣️\tN{self.cache.id}  from   N{src_id}   ⟵   {detail}"
+        # color = RED if detail == "miss" else YELLOW
+        # print(f"\033[{color}{text}\033[0m")
         # Si el mensaje es un miss
         if detail == "miss":
             self.processors_list.append(src_id)
@@ -165,7 +166,7 @@ class Controller:
                 [resp, block] = self.cache.write(address, data, State.EXCLUSIVE)
 
                 if resp is True:
-                    print(f"El bloque se ha obtenido de memoria.\n")
+                    # print(f"El bloque se ha obtenido de memoria.\n")
                     # Animacion de escritura de la cache local
                     self.write_animation(block)
 
@@ -186,9 +187,9 @@ class Controller:
 
                     # Si la operacion es exitosa
                     if resp is True:
-                        print(
-                            f"El procesador {src_id} ha brindado el bloque.\nCorrectamente escrito en el primer block del set (Ambos en estado M u O)"
-                        )
+                        # print(
+                        #     f"El procesador {src_id} ha brindado el bloque.\nCorrectamente escrito en el primer block del set (Ambos en estado M u O)"
+                        # )
                         # Animacion de escritura de la cache local
                         self.write_animation(block)
                     else:
@@ -203,7 +204,7 @@ class Controller:
             [resp, block] = self.cache.write(address, detail, State.SHARED)
 
             if resp is True:
-                print(f"El procesador {src_id} ha brindado el bloque.")
+                # print(f"El procesador {src_id} ha brindado el bloque.")
                 # Animacion de escritura de la cache local
                 self.write_animation(block)
 
@@ -227,9 +228,9 @@ class Controller:
 
                 # Si la operacion es exitosa
                 if resp is True:
-                    print(
-                        f"El procesador {src_id} ha brindado el bloque.\nCorrectamente escrito en el primer block del set (Ambos en estado M u O)"
-                    )
+                    # print(
+                    #     f"El procesador {src_id} ha brindado el bloque.\nCorrectamente escrito en el primer block del set (Ambos en estado M u O)"
+                    # )
                     # Animacion de escritura de la cache local
                     self.write_animation(block)
 
@@ -242,8 +243,8 @@ class Controller:
             # Si el bloque está, se analiza el estado.
             if block.state in [State.OWNED, State.MODIFIED]:
                 # Si el bloque está en O o M, se hace WB
-                text = f"    ⤵️    N{sender.id} anula a N{self.cache.id}\n        Write-Back!    Cache {self.cache.id}    {block}"
-                print(f"\033[{CIAN}{text}\033[0m")
+                # text = f"    ⤵️    N{sender.id} anula a N{self.cache.id}\n        Write-Back!    Cache {self.cache.id}    {block}"
+                # print(f"\033[{CIAN}{text}\033[0m")
                 # WB section
                 self.mem_action_done = False
                 self.bus.add_mem_request(self, MessageType.WB, address, block.data)
@@ -264,9 +265,9 @@ class Controller:
     # Metodo para escribir una vez la invalidacion haya finalizado.
 
     def _process_invalidation_response(self, src_id, address, detail):
-        if detail is not None:
-            text = f"   ❣️\tN{self.cache.id}          from\t N{src_id}   |  Invalidating - {detail}"
-            print(f"\033[{CIAN}{text}\033[0m")
+        # if detail is not None:
+            # text = f"   ❣️\tN{self.cache.id}          from\t N{src_id}   |  Invalidating - {detail}"
+            # print(f"\033[{CIAN}{text}\033[0m")
 
         # Si no se ha recibido mensaje de todos los procesadores, esperar.
         self.processors_list.append(src_id)

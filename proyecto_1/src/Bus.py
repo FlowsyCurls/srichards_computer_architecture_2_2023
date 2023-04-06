@@ -68,7 +68,7 @@ class Bus:
                 if not self.rd_wb_queue.empty():
                     if not self.read_write_lock:
                         wait = False
-                    time.sleep(CYCLE_DURATION)
+                    time.sleep(CYCLE_DURATION * 2)
 
             self._process_read_wb()
 

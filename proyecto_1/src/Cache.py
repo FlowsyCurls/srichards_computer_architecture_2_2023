@@ -50,7 +50,7 @@ class Cache:
                 State.SHARED,
                 State.MODIFIED,
                 State.EXCLUSIVE,
-                State.OWNED
+                State.OWNED,
             ]:
                 return block
         return None
@@ -78,21 +78,21 @@ class Cache:
             if block.state == State.INVALID:
                 block.set(address, data, state)
                 text += f"{str(block)}"
-                print(f"\033[{GREEN}{text}\033[0m")
+                # print(f"\033[{GREEN}{text}\033[0m")
                 return [True, block]
 
         for block in set:
             if block.state == State.SHARED:
                 block.set(address, data, state)
                 text += f"{str(block)}"
-                print(f"\033[{GREEN}{text}\033[0m")
+                # print(f"\033[{GREEN}{text}\033[0m")
                 return [True, block]
 
         for block in set:
             if block.state == State.EXCLUSIVE:
                 block.set(address, data, state)
                 text += f"{str(block)}"
-                print(f"\033[{GREEN}{text}\033[0m")
+                # print(f"\033[{GREEN}{text}\033[0m")
                 return [True, block]
 
         # Si alguno de los dos es modified
@@ -100,7 +100,7 @@ class Cache:
         for block in set:
             if block.state == State.MODIFIED:
                 text += f"{str(block)}"
-                print(f"\033[{GREEN}{text}\033[0m")
+                # print(f"\033[{GREEN}{text}\033[0m")
                 return [False, block]
 
         # If we haven't returned yet, all blocks are OWNED, so evict one

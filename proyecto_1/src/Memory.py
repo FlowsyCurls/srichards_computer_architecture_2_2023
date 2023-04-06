@@ -18,14 +18,14 @@ class Memory:
 
     def read(self, address):
         data = self.blocks[address]
-        print(
-            f"\033[{YELLOW} RAM  ➞  📜   reading • • •   {print_address_bin(address)}  ≻  {print_data_hex(data)}\033[0m"
-        )
+        # print(
+        #     f"\033[{YELLOW} RAM  ➞  📜   reading • • •   {print_address_bin(address)}  ≻  {print_data_hex(data)}\033[0m"
+        # )
         return data
 
     def write(self, address, data):
         self.blocks[address] = data
-        print(
-            f"\033[{YELLOW} RAM  ➞  ✏️   writing • • •   {print_address_bin(address)}  ≻  {print_data_hex(data)}\033[0m"
-        )
+        # print(
+        #     f"\033[{YELLOW} RAM  ➞  ✏️   writing • • •   {print_address_bin(address)}  ≻  {print_data_hex(data)}\033[0m"
+        # )
         return [print_address_bin(address), print_data_hex(data)]

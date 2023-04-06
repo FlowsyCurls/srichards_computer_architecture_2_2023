@@ -22,7 +22,7 @@ class Table:
             highlightthickness=1,
             highlightbackground="black",
         )
-        Canvas.grid(row=1, column=0, padx=(10, 10), pady=(5, 10))
+        Canvas.grid(row=1, column=0, padx=(10, 10), pady=(5, 10), columnspan=3)
 
         # Agregar headers
         for col in range(self.cols):
@@ -234,7 +234,7 @@ class FrameCache(ttk.Frame):
             highlightthickness=1,
             highlightbackground=BORDER,
         )
-        Canvas.pack()
+        Canvas.grid(column=0, row=0, columnspan=3)
 
         # Titulo
         tk.Label(
@@ -253,7 +253,17 @@ class FrameCache(ttk.Frame):
             fg="blue",
             font=(FONT, 10, "bold"),
         )
-        self.inst.grid(row=0, column=0, pady=(4, 0))
+        self.inst.grid(row=0, column=1, pady=(4, 0), sticky="nsew")
+
+        # Miss
+        self.miss = tk.Label(
+            Canvas,
+            text="",
+            bg=BACKGROUND,
+            fg="red",
+            font=(FONT, 10, "bold"),
+        )
+        self.miss.grid(row=0, column=2, pady=(4, 0))
 
         # Inicial Cache Data
         headers = ["", "state", "address", "set", "data"]
@@ -279,6 +289,14 @@ class FrameCache(ttk.Frame):
 
     def set_instruction(self, inst):
         self.inst.config(text=inst)
+
+    def miss_animation(self):
+        self.miss.config(text="miss", fg=HIGHLIGHT_INV)
+        self.miss.after(1200, lambda: self.miss.config(fg=BACKGROUND, text=""))
+
+    def hit_animation(self):
+        self.miss.config(text="hit", fg=HIGHLIGHT_WRITE)
+        self.miss.after(1200, lambda: self.miss.config(fg=BACKGROUND, text=""))
 
 
 class App(tk.Tk):
