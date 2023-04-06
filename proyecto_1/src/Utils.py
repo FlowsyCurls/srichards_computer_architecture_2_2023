@@ -15,7 +15,7 @@ WHITE = "37m"
 MEMORY_SIZE = 8
 CACHE_SIZE = 4
 NUM_CPU = 2
-
+CYCLE_DURATION = 700  # ms
 # GUI
 FONT = "Century Gothic"
 BORDER = "black"

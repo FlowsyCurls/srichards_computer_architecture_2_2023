@@ -216,10 +216,10 @@ class FrameCache(ttk.Frame):
         )
 
     def read(self, block):
-        self.table.read(block=block, delay=1500)
+        self.table.read(block=block, delay=600)
 
     def write(self, block, info):
-        self.table.write(block=block, info=info, delay=2000)
+        self.table.write(block=block, info=info, delay=900)
 
 
 class App(tk.Tk):

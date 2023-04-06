@@ -14,6 +14,7 @@ class Processor:
         self.controller = Controller(self.bus, self.cache, self.cache_frame)
         self.running = False
 
+
     def operate(self):
         # Generar una dirección aleatoria entre 0 y 7
         address = random.randint(0, 7)

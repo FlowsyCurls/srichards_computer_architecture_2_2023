@@ -26,19 +26,19 @@ class Bus:
     # Método para leer un bloque de la memoria principal
     def read(self, address):
         # Refrescar la interfaz
-        delay = random.uniform(2, 3)
+        delay = int(random.uniform(1.5, 3)*CYCLE_DURATION)
         self.memory_frame.read(
-            address=print_address_bin(address), delay=int(delay * 1000)
+            address=print_address_bin(address), delay=delay
         )
         return self.memory.read(address=address, delay=delay)
 
     # Método para escribir un bloque en la memoria principal
     def write(self, address, data):
         # Refrescar la interfaz
-        delay = random.uniform(3, 6)
-        info = self.memory.write(address=address, data=data, delay=delay)
+        delay = int(random.uniform(1.5, 3)*CYCLE_DURATION)
+        info = self.memory.write(address=address, data=data, delay=delay/1000)
         self.memory_frame.write(
-            address=print_address_bin(address), info=info, delay=int(delay * 1000)
+            address=print_address_bin(address), info=info, delay=delay
         )
         time.sleep(delay)  # Espera el tiempo de espera generado
 
