@@ -25,7 +25,8 @@ class Controller:
             if not remote:
                 text = f" ✔️  Read Hit!   Cache {sender.id}    block: {block.id}    addr: {print_address_bin(address)}    data: {print_data_hex(block.data)}"
                 print(f"\033[{GREEN}{text}\033[0m")
-                self.cache_frame.read(block=("B{0}").format(block.id))
+                # Animacion de lectura de la cache local
+                self.cache_frame.read(block=f"B{block.id}")
             return [True, block]
 
         else:
@@ -59,8 +60,8 @@ class Controller:
             text = f" ✔️  Write Hit!   Cache {sender.id}    block: {block.id}    addr: {print_address_bin(address)}    data: {print_data_hex(prev)}  ➜  {print_data_hex(block.data)}"
             print(f"\033[{GREEN}{text}\033[0m")
 
-            # Update en la interfaz
-            # self.cache_frame.update(address)
+            # Animacion de escritura de la cache local
+            self.write_animation(block)
 
         else:
             # Si el bloque no está, se invalidan los demas con esta direccion
@@ -80,9 +81,9 @@ class Controller:
         self.processors_list.append(src_id)
         if len(self.processors_list) == (self.nodes_quantity - 1):
             # Escribo en el bloque siguiendo la politica de escritura.
-            self.cache.write(address, self.tmp, State.MODIFIED)
-            # Update interfaz
-            # self.cache_frame.update(address)
+            [resp, block] = self.cache.write(address, self.tmp, State.MODIFIED)
+            # Animacion de escritura de la cache local
+            self.write_animation(block)
             self.processors_list = []
 
     # Método para procesar un mensaje recibido
@@ -137,37 +138,43 @@ class Controller:
                 # Si no se encuentra en ninguno de los procesadores
                 # Se lee desde memoria y pasa a un estado exclusivo
                 data = self.bus.read(address)
-                self.cache.write(address, data, State.EXCLUSIVE)
-                # Update interfaz
-                # self.cache_frame.update(address)
-                self.processors_list = []
-            return
+                [resp, block] = self.cache.write(address, data, State.EXCLUSIVE)
+                print("ACAAA")
+                if resp is True:
+                    print(f"El bloque se ha obtenido de memoria.")
+                    # Animacion de escritura de la cache local
+                    self.write_animation(block)
+                else:
+                    # Si la respuesta de escritura es falsa, entonces significa que solo hay bloques M u O, hay que invalidar para escribir
+                    self._process_read_response_aux(src_id, block, address, data)
+        else:
+            # Si el mensaje es un hit de alguna de las cache
+            # Escribo el dato consultado, con política de escritura
+            [resp, block] = self.cache.write(address, detail, State.SHARED)
 
-        # Si el mensaje es un hit de alguna de las cache
-        # Escribo el dato consultado, con política de escritura
-        block = self.cache.write(address, detail, State.SHARED)
-        # Update interfaz
-        # self.cache_frame.write(block=block, [State.SHARED])
+            if resp is True:
+                # Animacion de escritura de la cache local
+                self.write_animation(block)
+                print(f"El procesador {src_id} ha brindado el bloque.")
+            else:
+                # Si la respuesta de escritura es falsa, entonces significa que solo hay bloques M u O, hay que invalidar para escribir
+                self._process_read_response_aux(src_id, block, address, detail)
 
-        if block is None:
-            print(f"El procesador {src_id} ha brindado el bloque.")
-            return
-
+    def _process_read_response_aux(self, src_id, block, address, data):
         # Si todos los bloque están en Modified
         # Se escribe el dato en la memoria principal
         self.bus.write(block.address, block.data)
-        block.state = (
-            State.INVALID
-        )  # Se invalida el bloque, luego se modifica nuevamente
+        # Se invalida el bloque, luego se modifica nuevamente
+        block.state = State.INVALID
         # Se guarda el nuevo bloque en estado compartido.
-        block = self.cache.write(address, detail, State.SHARED)
-        # Update Interfaz
-        # self.cache_frame.update(address)
+        [resp, block] = self.cache.write(address, data, State.SHARED)
 
         # Si la operacion es exitosa
-        if block is None:
+        if resp is True:
+            # Animacion de escritura de la cache local
+            self.write_animation(block)
             print(
-                f"Correctamente escrito en el primer block del set (Ambos en estado M)"
+                f"El procesador {src_id} ha brindado el bloque.\nCorrectamente escrito en el primer block del set (Ambos en estado M u O)"
             )
 
     # Método privado para procesar un mensaje de invalidación
@@ -187,4 +194,17 @@ class Controller:
 
         self.bus.add_response(
             self.cache.id, sender, MessageType.InvResp, address, block
+        )
+
+    def write_animation(self, block):
+        # Animacion de escritura de la cache local
+        self.cache_frame.write(
+            block=f"B{block.id}",
+            info=[
+                None,
+                block.state.name[0],
+                print_address_bin(block.address),
+                None,
+                print_data_hex(block.data),
+            ],
         )

@@ -81,16 +81,14 @@ class Table:
         # k ->  fila X, columna 0
         # i * num de cols = fila 0, 1, 2...
         k = 0
-        for i in range(0, len(self.data), self.cols - 1):
+        for i in range(len(self.data)):
             if block == self.data[i][0]:
-                print(i, self.data[i][0], block)
                 k = i * self.cols
         return k
 
     # Se asigna el color de una vez
     def read(self, block, delay):
         k = self.get(block=block)
-        print("0000000000-----------", k)
         h = self.cols - 1
         while h != -1:
             self.update_bg_color(self.frames[k + h], HIGHLIGHT_READ)
@@ -122,7 +120,9 @@ class Table:
             h -= 1
 
     def update_text_and_bg_color(self, widget, text):
-        widget.config(text=text, bg=BACKGROUND)
+        widget.config(bg=BACKGROUND)
+        if text is not None:
+            widget.config(text=text)
 
     def update_bg_color(self, widget, color):
         widget.config(bg=color)
