@@ -26,16 +26,17 @@ class Bus:
     # Método para leer un bloque de la memoria principal
     def read(self, address):
         # Refrescar la interfaz
-        delay = random.uniform(4, 7)
+        delay = random.uniform(2, 3)
         self.memory_frame.read(address=address, delay=int(delay * 1000))
         return self.memory.read(address=address, delay=delay)
 
     # Método para escribir un bloque en la memoria principal
     def write(self, address, data):
         # Refrescar la interfaz
-        delay = random.uniform(4, 7)
-        # self.memory_frame.write(address=address, color=HIGHLIGHT_READ, delay=delay)
-        self.memory.write(address=address, data=data, delay=delay)
+        delay = random.uniform(3, 6)
+        block = self.memory.write(address=address, data=data, delay=delay)
+        self.memory_frame.write(address=address, block=block, delay=int(delay * 1000))
+        time.sleep(delay)  # Espera el tiempo de espera generado
 
     # Metodo para agregar request a la cola
     def add_request(self, sender, message_type, address, detail=None):

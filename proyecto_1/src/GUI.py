@@ -104,33 +104,36 @@ class Table:
             # Decrementar
             h -= 1
 
-    def write(self, address, load, delay):
+    def write(self, address, block, delay):
         k = self.get(address=address)
         # Set all cols
         # k -> address
         # k + 1 -> dato 1
         # k + 2 -> dato 2
         # k + 3 -> dato 3
-        # h = self.cols - 1
-        # while h != -1:
-        #     self.frames[k + h].config(bg=HIGHLIGHT_WRITE)
-        #     self.labels[k + h].config(bg=HIGHLIGHT_WRITE)
+        h = self.cols - 1
+        while h != -1:
+            self.update_bg_color(self.frames[k + h], HIGHLIGHT_WRITE)
+            self.update_bg_color(self.labels[k + h], HIGHLIGHT_WRITE)
 
-        #     # Tiempo en el que vuelve a la normalidad
-        #     self.frames[k + h].after(5000, self._set_data, self.frames[k + h], load[h])
-        #     self.labels[k + h].after(5000, self._set_data, self.frames[k + h], load[h])
+            # Tiempo en el que vuelve a la normalidad
+            self.update_bg_color_after(self.frames[k + h], BACKGROUND, delay)
+            self.update_text_and_bg_color_after(self.labels[k + h], block[h], delay)
 
-        #     # Decrementar
-        #     h -= 1
+            # Decrementar
+            h -= 1
 
-    def _set_data(self, widget, data):
-        widget.config(text=data, bg=BACKGROUND)
+    def update_text_and_bg_color(self, widget, text):
+        widget.config(text=text, bg=BACKGROUND)
 
     def update_bg_color(self, widget, color):
         widget.config(bg=color)
 
     def update_bg_color_after(self, widget, color, delay):
         widget.after(delay, self.update_bg_color, widget, color)
+
+    def update_text_and_bg_color_after(self, widget, text, delay):
+        widget.after(delay, self.update_text_and_bg_color, widget, text)
 
 
 class FrameMemory(ttk.Frame):
@@ -175,8 +178,8 @@ class FrameMemory(ttk.Frame):
     def read(self, address, delay):
         self.table.read(address=address, delay=delay)
 
-    # def clear(self, k):
-    # self.table.clear(k=k)
+    def write(self, address, block, delay):
+        self.table.write(address=address, block=block, delay=delay)
 
 
 class FrameCache(ttk.Frame):

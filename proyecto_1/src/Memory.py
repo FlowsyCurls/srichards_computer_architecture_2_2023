@@ -34,6 +34,5 @@ class Memory:
             print(
                 f"\033[{YELLOW} RAM  ➞  ✏️   writing • • •   {print_address_bin(address)}  ≻  {print_data_hex(data)}\033[0m"
             )
-            time.sleep(delay)  # Espera el tiempo de espera generado
-            return True
+            return [print_address_bin(address), print_data_hex(data)]
         return None
