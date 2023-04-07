@@ -11,7 +11,9 @@ class Processor:
         self.cache = Cache(id)
         self.cache_frame = cache_frame
         self.bus = bus
-        self.controller = Controller(running=False, bus=self.bus, cache=self.cache, cache_frame=self.cache_frame)
+        self.controller = Controller(
+            running=False, bus=self.bus, cache=self.cache, cache_frame=self.cache_frame
+        )
         self.Instruction = ""
 
     def operate(self):
@@ -22,28 +24,37 @@ class Processor:
         # operation = "read"
         if operation == "read":
             self.Instruction = f"READ  {print_address_bin(address)}"
+            # Actualizar la instruction en pantalla
+            self.cache_frame.set_instruction(self.Instruction)
+            print(
+                f"\033[{MAGENTA}\nProcessor {self.id}\033[0m\033[{WHITE}  {self.Instruction}\033[0m",
+            )
             self.read(address)
         elif operation == "write":
             n = random.randint(0, 65535)
             self.Instruction = (
                 f"WRITE {print_address_bin(address)}; {print_data_hex(n)}"
             )
+            # Actualizar la instruction en pantalla
+            self.cache_frame.set_instruction(self.Instruction)
+            print(
+                f"\033[{MAGENTA}\nProcessor {self.id}\033[0m\033[{WHITE}  {self.Instruction}\033[0m",
+            )
             self.write(address, n)
         elif operation == "calc":
             self.Instruction = "CALC"
+            # Actualizar la instruction en pantalla
+            self.cache_frame.set_instruction(self.Instruction)
+            print(
+                f"\033[{MAGENTA}\nProcessor {self.id}\033[0m\033[{WHITE}  {self.Instruction}\033[0m",
+            )
             self.calc()
 
-        print(
-            f"\033[{MAGENTA}\nProcessor {self.id}\033[0m\033[{WHITE}  {self.Instruction}\033[0m",
-        )
-        # Actualizar la instruction en pantalla
-        self.cache_frame.set_instruction(self.Instruction)
-
     def read(self, address):
-        self.controller.read(self, address)
+        self.controller.read_local(address)
 
     def write(self, address, data):
-        self.controller.write(self, address, data)
+        self.controller.write(address, data, State.MODIFIED)
 
     def calc(self):
         time.sleep(random.uniform(0.001, 0.01))

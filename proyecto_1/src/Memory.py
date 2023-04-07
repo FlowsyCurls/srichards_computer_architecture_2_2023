@@ -6,7 +6,7 @@ from Utils import *
 class Memory:
     def __init__(self):
         # Diccionario de bloqueos de memoria principal
-        self.blocks = {i: 0 for i in range(8)}
+        self.blocks = {i: i for i in range(8)}
 
     def __str__(self):
         memory_str = "\n ▶  Main Memory:\n"

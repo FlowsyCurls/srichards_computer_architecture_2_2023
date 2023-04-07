@@ -61,48 +61,73 @@ class Cache:
             return [True, block]
         return [False, None]
 
-    # Write cuando se hace local y cae encima.
-    def write_local(self, address, data):
-        # Se asume que se comprueba la existencia.
+    # Funcion para invalidar
+    def invalidate(self, address):
+        # Se comprueba la existencia.
         block = self._get_block(address)
-        block.data = data
-        block.state = State.MODIFIED
-        return block
+        if block is None:
+            return [False, None]
+        do_WB = True if block.state in [State.OWNED, State.MODIFIED] else False
+        block.state = State.INVALID
+        text = f" ✅ Cache {self.id}   ● Set {address % 2}\t{str(block)}"
+        print(f"\033[{RED}{text}\033[0m")
+        return [do_WB, block]
+
+    def write(self, address, data, state):
+        # Se comprueba la existencia.
+        block = self._get_block(address)
+        if block is None:
+            return self._write(address, data, state)
+        text = f" ✏️ Cache {self.id}   ● Set {address % 2}\t"
+
+        # Si es owned lo modifico afuera.
+        if block.state == State.OWNED:
+            text += f"{str(block)}"
+            print(f"\033[{GREEN}{text}\033[0m")
+            return [State.OWNED, block]
+
+        block.set(address, data, state)
+        text += f"{str(block)}"
+        print(f"\033[{GREEN}{text}\033[0m")
+        return [State.SHARED, block]
 
     # Write cuando se hace despues de consultar un dato, con política de escritura
-    def write(self, address, data, state):
+    def _write(self, address, data, state):
         index = address % 2
         set = self.sets[index]  # determinar el índice del conjunto
+        do_WB = True
+        text = f" ✏️ Cache {self.id}   ● Set {index}\t"
         for block in set:
-            text = f" ✅ Cache {self.id}   ● Set {index}\t"
             if block.state == State.INVALID:
                 block.set(address, data, state)
                 text += f"{str(block)}"
-                # print(f"\033[{GREEN}{text}\033[0m")
-                return [True, block]
+                print(f"\033[{GREEN}{text}\033[0m")
+                return [State.INVALID, block]
 
         for block in set:
             if block.state == State.SHARED:
                 block.set(address, data, state)
                 text += f"{str(block)}"
-                # print(f"\033[{GREEN}{text}\033[0m")
-                return [True, block]
+                print(f"\033[{GREEN}{text}\033[0m")
+                return [State.SHARED, block]
 
         for block in set:
             if block.state == State.EXCLUSIVE:
                 block.set(address, data, state)
                 text += f"{str(block)}"
-                # print(f"\033[{GREEN}{text}\033[0m")
-                return [True, block]
+                print(f"\033[{GREEN}{text}\033[0m")
+                return [State.EXCLUSIVE, block]
 
-        # Si alguno de los dos es modified
-        # se devuelve el bloque
         for block in set:
             if block.state == State.MODIFIED:
+                block.set(address, data, state)
                 text += f"{str(block)}"
-                # print(f"\033[{GREEN}{text}\033[0m")
-                return [False, block]
+                print(f"\033[{GREEN}{text}\033[0m")
+                return [State.MODIFIED, block]
 
         # If we haven't returned yet, all blocks are OWNED, so evict one
+        # Si es owned lo modifico afuera.
         block = set[0]
-        return [False, block]
+        text += f"{str(block)}"
+        print(f"\033[{GREEN}{text}\033[0m")
+        return [State.OWNED, block]

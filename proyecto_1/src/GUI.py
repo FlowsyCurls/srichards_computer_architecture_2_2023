@@ -292,11 +292,15 @@ class FrameCache(ttk.Frame):
 
     def miss_animation(self):
         self.miss.config(text="miss", fg=HIGHLIGHT_INV)
-        self.miss.after(1200, lambda: self.miss.config(fg=BACKGROUND, text=""))
+        self.miss.after(
+            int(CYCLE_DURATION * 4), lambda: self.miss.config(fg=BACKGROUND, text="")
+        )
 
     def hit_animation(self):
         self.miss.config(text="hit", fg=HIGHLIGHT_WRITE)
-        self.miss.after(1200, lambda: self.miss.config(fg=BACKGROUND, text=""))
+        self.miss.after(
+            int(CYCLE_DURATION * 4), lambda: self.miss.config(fg=BACKGROUND, text="")
+        )
 
 
 class App(tk.Tk):
