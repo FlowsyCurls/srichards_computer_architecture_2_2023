@@ -336,6 +336,103 @@ class App(tk.Tk):
             cache_frames=self.cache_frames, memory_frame=self.memory_frame
         )
 
+        x = 700
+        y = 300
+
+        # Processors
+        self.selected_node = tk.StringVar(value="0")
+        tk.Label(
+            self.main_canva,
+            bg="lightgray",
+            font=(FONT, 10, "bold"),
+            text="Select processor: ",
+        ).place(x=x, y=y)
+
+        options1 = ["N0", "N1", "N2", "N3"]
+        for i, option in enumerate(options1):
+            radio = tk.Radiobutton(
+                self.main_canva,
+                text=option,
+                bg="lightgray",
+                font=(FONT, 10),
+                variable=self.selected_node,
+                value=i,
+            )
+            radio.place(x=x, y=y + 20 + (i * 20))
+
+        # Instructions
+        offset = 110
+        self.selected_inst = tk.StringVar(value="READ")
+        tk.Label(
+            self.main_canva,
+            bg="lightgray",
+            font=(FONT, 10, "bold"),
+            text="Select instruction: ",
+        ).place(x=x, y=y + offset)
+
+        options2 = ["READ", "WRITE", "CALC"]
+        for i, option in enumerate(options2):
+            radio = tk.Radiobutton(
+                self.main_canva,
+                text=option,
+                bg="lightgray",
+                font=(FONT, 10),
+                variable=self.selected_inst,
+                value=option,
+                command=self.write_label_disable,
+            )
+            radio.place(x=x, y=y + offset + 20 + (i * 20))
+
+        offset = 150
+        # Address
+        self.selected_address = tk.StringVar(value="000")
+        tk.Label(
+            self.main_canva,
+            bg="lightgray",
+            font=(FONT, 10, "bold"),
+            text="Select address: ",
+        ).place(x=x + offset, y=y)
+
+        options3 = ["000", "001", "010", "011", "100", "101", "110", "111"]
+        for i, option in enumerate(options3):
+            radio = tk.Radiobutton(
+                self.main_canva,
+                text=option,
+                bg="lightgray",
+                font=(FONT, 10),
+                variable=self.selected_address,
+                value=option,
+            )
+            radio.place(x=x + offset, y=y + 20 + (i * 20))
+
+        offset += 130
+        tk.Label(
+            self.main_canva,
+            bg="lightgray",
+            font=(FONT, 10, "bold"),
+            text="Data:",
+        ).place(x=x + offset, y=y + 30)
+        self.data_entry = tk.Entry(self.main_canva, font=(FONT, 10), state="disabled")
+        self.data_entry.place(x=x + offset + 50, y=y + 30)
+
+        self.button = tk.Button(
+            self.main_canva,
+            text="ADD",
+            command=self.add_inst,
+        )
+        self.button.place(x=x + offset + 35, y=y + 70)
+
+    def write_label_disable(self):
+        if self.selected_inst.get() == "WRITE":
+            self.data_entry.config(state="normal")
+        else:
+            self.data_entry.config(state="disabled")
+
+    def add_inst(self):
+        self.data_entry.get()
+        print(self.selected_node.get(), self.selected_inst.get(), self.selected_address.get(), self.data_entry.get())
+        self.data_entry.delete(0, tk.END)
+
     # Define a function to execute the code in a thread
     def start_system(self):
         # Execute in manual mode
