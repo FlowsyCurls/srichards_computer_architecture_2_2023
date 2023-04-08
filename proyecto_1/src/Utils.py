@@ -14,13 +14,16 @@ WHITE = "37m"
 
 MEMORY_SIZE = 8
 CACHE_SIZE = 4
-NUM_CPU = 2
+NUM_CPU = 4
 CYCLE_DURATION = 1.500  # ms
 CACHE_RD_DELAY = 2.500
 CACHE_WR_DELAY = 2.800
 # GUI
 FONT = "Century Gothic"
 BORDER = "black"
+WINDOW = 'pink'
+MENU = 'lightgray'
+NOTE = 'black'
 BACKGROUND = "white"
 FONTGROUND = "black"
 HIGHLIGHT = "yellow"
