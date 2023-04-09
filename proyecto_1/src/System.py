@@ -1,6 +1,6 @@
 import threading
-from Processor import Processor
-from Bus import Bus
+from cpu import Processor
+from bus import Bus
 from Utils import NUM_CPU
 import time
 
