@@ -1,6 +1,5 @@
 # Función principal
-from interface import App
-import threading
+from app import App
 
 if __name__ == "__main__":
     app = App()

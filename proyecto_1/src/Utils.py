@@ -1,9 +1,16 @@
-from threading import Lock
 from enum import Enum
-import random
-import threading
-import time
 
+# SYSTEM VARIABLES
+NUM_CPU = 4
+PROCESS_DELAY = 1
+CYCLES_DELAY = 2.5
+
+MEM_DELAY = 1.5
+CACHE_RD_DELAY = MEM_DELAY * 0.40
+CACHE_WR_DELAY = MEM_DELAY * 0.60
+
+
+# COLOR PRINTS
 RED = "31m"
 GREEN = "32m"
 YELLOW = "33m"
@@ -12,56 +19,28 @@ MAGENTA = "35m"
 CIAN = "36m"
 WHITE = "37m"
 
-MEMORY_SIZE = 8
-CACHE_SIZE = 4
-NUM_CPU = 4
-CYCLE_DURATION = 1.500  # ms
-CACHE_RD_DELAY = 2.500
-CACHE_WR_DELAY = 2.800
-# GUI
+# GUI specs
 FONT = "Century Gothic"
 BORDER = "black"
-WINDOW = 'pink'
-MENU = 'lightgray'
-NOTE = 'black'
+WINDOW = "gainsboro"
+MENU = "silver"
+NOTE = "black"
 BACKGROUND = "white"
 FONTGROUND = "black"
-HIGHLIGHT = "yellow"
-HIGHLIGHT_READ = "yellow"
-HIGHLIGHT_WRITE = "#1df836"
-HIGHLIGHT_RQ = "orange"
-HIGHLIGHT_INV = "red"
+
+# Animations
+HIGHLIGHT_HIT = "limegreen"
+HIGHLIGHT_READ = "gold"
+HIGHLIGHT_WRITE = "turquoise"
+HIGHLIGHT_RQ = "blueviolet"
+HIGHLIGHT_INV = "crimson"
+
 padding = 1
 height = 28
 
 
-def print_address_bin(address):
-    # Convert to binary and remove '0b' prefix
-    binary_string = bin(address)[2:]
-    # Pad with leading zeroes up to 3 bits
-    binary_number = "{0:03}".format(int(binary_string))
-    return binary_number
-
-
-def print_data_hex(data):
-    hex_str = hex(data)[2:].zfill(4).upper()
-    return hex_str
-
-
-# Enumeración para los posibles estados de un bloque
-class State(Enum):
-    INVALID = 0
-    SHARED = 1
-    EXCLUSIVE = 2
-    MODIFIED = 3
-    OWNED = 4
-
-
 # Enumeración de tipos de mensaje para el bus
-class MessageType(Enum):
-    RdReq = 0  # Solicitud de lectura
-    RdResp = 1  # Respuesta a solicitud de lectura
-    Inv = 3  # Invaliación de bloque
-    InvResp = 4  # Respues a la invalicacion de un bloque
-    WB = 5
-    RD = 6  # Solicitud lectura a memoria
+class AccessType(Enum):
+    readmiss = 0
+    writemiss = 3
+    calc = 5

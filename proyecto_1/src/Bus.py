@@ -1,157 +1,229 @@
-from Memory import Memory
-import queue
-import threading
 import time
-from Utils import *
+from Utils import (
+    CACHE_RD_DELAY,
+    CACHE_WR_DELAY,
+    HIGHLIGHT_INV,
+    HIGHLIGHT_READ,
+    HIGHLIGHT_RQ,
+    HIGHLIGHT_WRITE,
+    MEM_DELAY,
+    NUM_CPU,
+    PROCESS_DELAY,
+    AccessType,
+)
+from myrandom import myrandom
 
 
 class Bus:
-    def __init__(self, memory_frame):
-        self.memory_frame = memory_frame
-        self.controllers = []
-        self.memory = Memory()
-        self.request_queue = queue.Queue()
-        self.response_queue = queue.Queue()
-        self.rd_wb_queue = queue.Queue()
-        self.read_write_lock = False
-        self.event = threading.Event()
+    def __init__(self, memory_board, channel, cores):
+        super().__init__()
+        self.memory_board = memory_board
+        self.channel = channel
+        self.cores = cores
 
-    def connect(self, processor):
-        self.controllers.append(processor.controller)
-        print(f"  🔄️  Conectando N{processor.id}...")
+    def get_core_cache(self, id):
+        return self.cores[id].get_cache()
 
-    def state(self):
-        for p in self.controllers:
-            print(p.cache)
+    def get_mem_data(self, address):
+        return self.memory_board.get_data(address)
 
-        print(self.memory)
+    def process_tasks(self):
+        time.sleep(PROCESS_DELAY)
 
-    ######################################################
-    #   ACCIONES SOBRE LA MEMORIA
-    ######################################################
+        # Clear colored blocks
+        self._clear_animation()
 
-    # Método para leer un bloque de la memoria principal
-    def read(self, address):
-        delay = random.uniform(1.2, 1.5) * CYCLE_DURATION
-        # Sección crítica
-        self.read_write_lock = True
-        # Refrescar la interfaz
-        self.memory_frame.read(
-            address=print_address_bin(address), delay=int(delay * 1000)
-        )
-        data = self.memory.read(address=address)
-        self.event.wait(delay)  # Espera el tiempo de espera generado
-        self.read_write_lock = False
-        return data
+        for message in iter(self.channel.get, None):
+            access = message["access"]
 
-    # Método para escribir un bloque en la memoria principal
-    def write(self, address, data):
-        delay = random.uniform(1.2, 2) * CYCLE_DURATION
-        # Sección crítica
-        self.read_write_lock = True
-        # Refrescar la interfaz
-        info = self.memory.write(address=address, data=data)
-        self.memory_frame.write(
-            address=print_address_bin(address), info=info, delay=int(delay * 1000)
-        )
-        self.event.wait(delay)  # Espera el tiempo de espera generado
-        self.read_write_lock = False
+            # If its a CALC, just pass
+            if access == AccessType.calc:
+                continue
 
-    ######################################################
-    #   PROCESAMIENTO DE MENSAJES A MEMORIA
-    ######################################################
+            # Get the core cache
+            core_id = int(message["id"][1])
+            local_cache = self.get_core_cache(core_id)
 
-    # Metodo para agregar request a la cola de wb o lectura de memoria
-    def add_mem_request(self, requester, message_type, address, data=None):
-        request = [requester, message_type, address, data]
-        self.rd_wb_queue.put(request)
+            # Get important information
+            block_id = message["block_id"]
+            address = message["address"]
 
-    # Metodo para agregar request a la cola WB y lectura de memoria.
-    def _process_rd_wb(self):
-        request = self.rd_wb_queue.get()
-        [requester, message_type, address, data] = request
+            # Block destructuring
+            block = local_cache.get_block_by_id(block_id)
+            state = block.get_state()
+            data = block.get_data()
 
-        # Responder al procesador que se realizó el tramite.
-        if message_type == MessageType.WB:
-            self.write(address, data)
-            requester.mem_action_done = True
+            # If a readmiss is given
+            if access == AccessType.readmiss:
+                self._process_readmiss(
+                    core_id, local_cache, block_id, state, address, data
+                )
 
-        elif message_type == MessageType.RD:
-            requester.tmp = self.read(address)
-            requester.mem_action_done = True
+            # If a writemiss is given
+            elif access == AccessType.writemiss:
+                # Obtain value to write
+                value = message["value"]
+                self._process_writemiss(
+                    core_id, local_cache, block_id, state, address, data, value
+                )
 
-    def _process_mem_task(self):
-        while True:
-            # Procesar la solicitud aquí ...
-            wait = True
-            while wait:
-                if not self.rd_wb_queue.empty():
-                    if not self.read_write_lock:
-                        wait = False
-                    time.sleep(0.3)
+            else:
+                print(f"Error access - '{access}' not found.")
 
-            self._process_rd_wb()
+    """ 
+    This function processes a readmiss message by updating the cache state
+    and data for the specified block.
+    """
 
-    ######################################################
-    #   PROCESAMIENTO DE MENSAJES ENTRE PROCESADORES
-    ######################################################
+    def _process_readmiss(self, core_id, local_cache, block_id, state, address, data):
+        # If I do read and if I am writing on M or O I must do WB
+        if state in ["M", "O"]:
+            self._perfom_wb(dirty_address=address, dirty_data=data)
 
-    # Metodo para agregar request a la cola
-    def add_request(self, requester, message_type, address, detail=None):
-        request = [requester, message_type, address, detail]
-        self.request_queue.put(request)
+        # Now ask check if other cores has the block:
+        owned_data = self._seek_owned(address, core_id)
 
-    # Metodo para agregar respuesta a la cola
-    def add_response(self, requester, sponsor, message_type, address, detail=None):
-        response = [requester, sponsor, message_type, address, detail]
-        self.response_queue.put(response)
+        # If sponsors state is O or M then set block state to S
+        if owned_data is not None:
+            time.sleep(CACHE_RD_DELAY)
+            local_cache.set(block_id, "S", address, owned_data)
+            local_cache.animation(block_id, HIGHLIGHT_READ)
 
-    # Método para enviar un mensaje a todos los procesadores, excepto al que envió el mensaje
-    def _process_request(self):
-        request = self.request_queue.get()
-        [requester, message_type, address, detail] = request
-        for c in self.controllers:
-            if c != requester:
-                # Todos los controladores menos el solicitante procesan la funcion.
-                c._process_message(requester, message_type, address, detail)
+        # If no sponsors
+        else:
+            # Check if address is exclusive
+            if self._is_exclusive(address, core_id):
+                # Read from memory
+                mem_data = self.get_mem_data(address)
+                time.sleep(MEM_DELAY)
+                self.memory_board.animation(address, HIGHLIGHT_READ)
+                time.sleep(CACHE_WR_DELAY)
+                local_cache.set(block_id, "E", address, mem_data)
+                local_cache.animation(block_id, HIGHLIGHT_WRITE)
+            # Then the address is shared with a block that was once exclusive.
+            else:
+                shared_data = self._seek_shared(address, core_id)
+                print(shared_data)
+                local_cache.set(block_id, "S", address, shared_data)
+                time.sleep(CACHE_WR_DELAY)
+                local_cache.animation(block_id, HIGHLIGHT_WRITE)
+
+    """
+    This function processes a writemiss message by updating the cache state
+    and data for the specified block, and broadcasting a message to other
+    caches to invalidate their copies of the block.
+    """
+
+    def _process_writemiss(
+        self, core_id, local_cache, block_id, state, address, data, value
+    ):
+        # If state is O, then do a WB
+        if state in "O":
+            self._perfom_wb(address, data)
+
+        # Now write in the block and save the changes in the local cache
+        time.sleep(CACHE_WR_DELAY)
+        local_cache.set(block_id, "M", address, value)
+        local_cache.animation(block_id, HIGHLIGHT_WRITE)
+
+        # Finally tell others to invalidate this block
+        self._seek_invalidate(address, core_id)
+
+    def _clear_animation(self):
+        # Clear animation in memory and each core
+        self.memory_board.clear_animation()
+        [core.get_core_board().clear_animation() for core in self.cores]
+
+    def _perfom_wb(self, dirty_address, dirty_data):
+        self.memory_board.set_data(dirty_address, dirty_data)
+        # Set board color
+        time.sleep(MEM_DELAY)
+        self.memory_board.animation(dirty_address, HIGHLIGHT_WRITE)
+
+    def _is_exclusive(self, local_address, requester_id):
+        for core_id in range(NUM_CPU):
+            if core_id != requester_id:
+                local_cache = self.get_core_cache(core_id)
+                block = local_cache.get_block_by_address(local_address)
+
+                # If block is not in core[i], then continue
+                if block is None:
+                    continue
+
+                # If block is in core[i], then verify state.
+                state = block.get_state()
+
+                # If the state is different than I, then return False
+                if state == "I":
+                    continue
+                return False
+
+        # If we arrive here it means that no core has the block of this address  in a valid state.
         return True
 
-    # Método para enviar un mensaje a un procesador en especific
+    def _seek_owned(self, local_address, requester_id):
+        # search for block that can gives the value - Owned or Modified
+        for core_id in range(NUM_CPU):
+            if core_id != requester_id:
+                local_cache = self.get_core_cache(core_id)
+                block = local_cache.get_block_by_address(local_address)
 
-    def _process_response(self):
-        response = self.response_queue.get()
-        [requester, sponsor, message_type, address, detail] = response
-        # Target procesa la funcion que determina qué es la respuesta de la source informante.
-        requester._process_message(sponsor, message_type, address, detail)
+                # If block is not in core[i], then continue
+                if block is None:
+                    continue
 
-    def _process_task(self):
-        while True:
-            # Procesar la solicitud aquí ...
-            wait = True
-            while wait:
-                if not self.request_queue.empty():
-                    wait = False
-                    time.sleep(0.4)
-            self._process_request()
+                # If block is in core[i], then verify state.
+                state = block.get_state()
+                address = block.get_address()
 
-            wait = True
-            while wait:
-                if not self.response_queue.empty():
-                    wait = False
-                    time.sleep(0.1)
-            self._process_response()
+                # If block is M or O, then set state to O and give value
+                if local_address == address and state in ["M", "O"]:
+                    block.set_state("O")
+                    time.sleep(CACHE_RD_DELAY)
+                    local_cache.animation(block.get_id(), HIGHLIGHT_RQ)
+                    return block.get_data()
 
-    ######################################################
-    #   EJECUCION
-    ######################################################
+        # If we arrive here it means that no core has an O or M block of this address.
+        return None
 
-    def run(self):
-        # Iniciar hilos de procesamiento de solicitudes
-        for i in range(len(self.controllers)):
-            t = threading.Thread(target=self._process_task)
-            t.daemon = True
-            t.start()
+    def _seek_shared(self, local_address, requester_id):
+        # search for block that can gives the value - Owned or Modified
+        for core_id in range(NUM_CPU):
+            if core_id != requester_id:
+                local_cache = self.get_core_cache(core_id)
+                block = local_cache.get_block_by_address(local_address)
 
-        tmem = threading.Thread(target=self._process_mem_task)
-        tmem.daemon = True
-        tmem.start()
+                # If block is not in core[i], then continue
+                if block is None:
+                    continue
+
+                # If block is in core[i], then verify state.
+                state = block.get_state()
+                address = block.get_address()
+
+                # If block is E or S then give value
+                if local_address == address and state in ["E", "S"]:
+                    time.sleep(CACHE_RD_DELAY)
+                    block.set_state("S")
+                    local_cache.animation(block.get_id(), HIGHLIGHT_RQ)
+                    return block.get_data()
+
+        # If we arrive here it means that no core has an S block of this address.
+        return None
+
+    def _seek_invalidate(self, local_address, requester_id):
+        # search for this block in each core and invalidate it
+        # search for block that can gives the value - Owned or Modified
+        for core_id in range(NUM_CPU):
+            if core_id != requester_id:
+                local_cache = self.get_core_cache(core_id)
+                block = local_cache.get_block_by_address(local_address)
+
+                # If block is not in core[i], then continue
+                if block is None:
+                    continue
+
+                # If block is in core[i], then invalidate
+                block.set_state("I")
+                time.sleep(CACHE_WR_DELAY)
+                local_cache.animation(block.get_id(), HIGHLIGHT_INV)
