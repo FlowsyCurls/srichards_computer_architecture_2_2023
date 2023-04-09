@@ -23,11 +23,12 @@ WHITE = "37m"
 FONT = "Century Gothic"
 BORDER = "black"
 WINDOW = "gainsboro"
-MENU = "silver"
+MENU = "#d2d2d2"
+EDGES = "#b0b0b0"
 NOTE = "black"
 BACKGROUND = "white"
 FONTGROUND = "black"
-
+ADDSECTION = MENU
 # Animations
 HIGHLIGHT_HIT = "limegreen"
 HIGHLIGHT_READ = "gold"
@@ -42,5 +43,5 @@ height = 28
 # Enumeración de tipos de mensaje para el bus
 class AccessType(Enum):
     readmiss = 0
-    writemiss = 3
-    calc = 5
+    writemiss = 1
+    calc = 2

@@ -1,5 +1,5 @@
 import time
-from Utils import (
+from src.utils import (
     CACHE_RD_DELAY,
     CACHE_WR_DELAY,
     HIGHLIGHT_INV,
@@ -11,7 +11,7 @@ from Utils import (
     PROCESS_DELAY,
     AccessType,
 )
-from myrandom import myrandom
+from src.myrandom import myrandom
 
 
 class Bus:
@@ -103,7 +103,6 @@ class Bus:
             # Then the address is shared with a block that was once exclusive.
             else:
                 shared_data = self._seek_shared(address, core_id)
-                print(shared_data)
                 local_cache.set(block_id, "S", address, shared_data)
                 time.sleep(CACHE_WR_DELAY)
                 local_cache.animation(block_id, HIGHLIGHT_WRITE)
@@ -224,6 +223,9 @@ class Bus:
                     continue
 
                 # If block is in core[i], then invalidate
+                if block.get_state() == "I":
+                    return
+                
                 block.set_state("I")
                 time.sleep(CACHE_WR_DELAY)
                 local_cache.animation(block.get_id(), HIGHLIGHT_INV)

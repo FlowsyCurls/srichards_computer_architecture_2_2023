@@ -1,6 +1,6 @@
 import time
-from Utils import *
-from myrandom import myrandom
+from src.utils import *
+from src.myrandom import myrandom
 
 
 class Controller:

@@ -4,11 +4,11 @@ import threading
 import time
 import tkinter as tk
 from tkinter import DISABLED, ttk
-from bus import Bus
-from Utils import *
-from cpu import CPU
-from myrandom import myrandom
-from boards import CoreBoard, MemoryBoard
+from src.bus import Bus
+from src.utils import *
+from src.cpu import CPU
+from src.myrandom import myrandom
+from src.boards import Add_Inst_Section, CoreBoard, MemoryBoard
 
 
 class App(tk.Tk):
@@ -51,7 +51,7 @@ class App(tk.Tk):
 
         """  MENU ELEMENTS  """
         menu_canva = tk.Canvas(
-            self, background=MENU, highlightbackground=BORDER, highlightthickness=1
+            self, background=MENU, highlightbackground=EDGES, highlightthickness=1
         )
         menu_canva.place(x=pos_x + 705, y=pos_y + 573)
         self.start_button = ttk.Button(
@@ -134,88 +134,11 @@ class App(tk.Tk):
         main_canva.create_rectangle(x1, y1, x2, y2, fill=BORDER)
         main_canva.create_polygon(x1, y1 - 8, x1, y2 + 7, x1 - 15, y1 + 8, fill=BORDER)
         main_canva.create_polygon(x2, y1 - 8, x2, y2 + 7, x2 + 15, y1 + 8, fill=BORDER)
+        
+        # Add instruction section
+        self.add_inst_section = Add_Inst_Section(main_canva, self.cores)
+        self.add_inst_section.place(x=pos_x + 705, y=340)
 
-        pos_x = 750
-        pos_y = pos_y + 310
-        offset_inst = 280
-        offset_addr = 145
-        offset_data_x = 280
-        offset_data_y = 130
-
-        # Processors, Instructions, Address, Data
-        self.selected_core = tk.StringVar(value="0")
-        self.selected_inst = tk.StringVar(value="READ")
-        self.selected_address = tk.StringVar(value="000")
-
-        ttk.Label(main_canva, style="Note.TLabel", text="Select processor").place(
-            x=pos_x, y=pos_y
-        )
-        ttk.Label(main_canva, style="Note.TLabel", text="Select instruction").place(
-            x=pos_x + offset_inst, y=pos_y
-        )
-        ttk.Label(
-            main_canva,
-            style="Note.TLabel",
-            text="Select address",
-        ).place(x=pos_x + offset_addr, y=pos_y)
-        ttk.Label(main_canva, style="Note.TLabel", text="Enter data").place(
-            x=pos_x + offset_data_x, y=pos_y + offset_data_y
-        )
-
-        # Options for the radio buttons
-        options1 = ["N0", "N1", "N2", "N3"]
-        options2 = ["READ", "WRITE", "CALC"]
-        options3 = ["000", "001", "010", "011", "100", "101", "110", "111"]
-
-        for i, option in enumerate(options1):  # Processors
-            radio = ttk.Radiobutton(
-                main_canva,
-                style="Custom.TRadiobutton",
-                takefocus=False,
-                text=option,
-                variable=self.selected_core,
-                value=i,
-            )
-            radio.place(x=pos_x, y=pos_y + 25 + (i * 26))
-        for i, option in enumerate(options2):  # Instructions
-            radio = ttk.Radiobutton(
-                main_canva,
-                style="Custom.TRadiobutton",
-                takefocus=False,
-                text=option,
-                variable=self.selected_inst,
-                value=option,
-                command=self.enable_disable_data_entry,
-            )
-            radio.place(x=pos_x + offset_inst, y=pos_y + 25 + (i * 26))
-        for i, option in enumerate(options3):  # Address
-            radio = ttk.Radiobutton(
-                main_canva,
-                style="Custom.TRadiobutton",
-                takefocus=False,
-                text=option,
-                variable=self.selected_address,
-                value=option,
-            )
-            radio.place(x=pos_x + offset_addr, y=pos_y + 25 + (i * 26))
-
-        # Entry para insertar el dato a escribir
-        self.data_entry = tk.Entry(main_canva, font=(FONT, 10), state="disabled")
-        self.data_entry.place(x=pos_x + offset_data_x, y=pos_y + offset_data_y + 30)
-        self.data_entry.config(
-            validate="key",
-            validatecommand=(self.data_entry.register(self.limit_data_entry), "%P"),
-        )
-
-        # Button to add instruction.
-        self.button = ttk.Button(
-            main_canva,
-            text="ADD",
-            command=self.add_inst,
-            style="RoundedButton.TButton",
-            takefocus=False,
-        )
-        self.button.place(x=pos_x + offset_data_x + 30, y=pos_y + offset_data_y + 60)
 
     # function to exit the application
     def _exit_app(self, event):
@@ -230,6 +153,7 @@ class App(tk.Tk):
         # Loop over each core in the cache
         [core.set_instruction() for core in self.cores]
         # Enable the step, run, and check buttons
+        self.add_inst_section.add["state"] = "normal"
         self.step_button["state"] = "normal"
         self.run_button["state"] = "normal"
         self.check_button["state"] = "normal"
@@ -253,14 +177,15 @@ class App(tk.Tk):
 
         # Create and start threads for generating new instructions on each CPU core
         instr_threads = [
-            threading.Thread(target=core.set_instruction) for core in (self.cores)
+            threading.Thread(target=core.set_instruction, daemon=True)
+            for core in (self.cores)
         ]
 
         for thread in instr_threads:
             thread.start()
 
         # Start a new thread to check the system bus
-        simulation_thread = threading.Thread(target=self.bus.process_tasks)
+        simulation_thread = threading.Thread(target=self.bus.process_tasks, daemon=True)
         simulation_thread.start()
 
         # Wait 500 ms before continuing
@@ -269,10 +194,10 @@ class App(tk.Tk):
     # Method to start the simulation
     def run(self):
         # Print message indicating whether it's a limited run or non-stop operation
-        if self.is_limited_run.get():
-            print(f"Running {str(self.cycles.get())} cycles")
-        else:
-            print("Non-stop operation")
+        # if self.is_limited_run.get():
+        #     print(f"Running {str(self.cycles.get())} cycles")
+        # else:
+        #     print("Non-stop operation")
 
         # Disable run, step, and check buttons; enable stop button; disable spinbox entry
         self.run_button["state"] = "disabled"
@@ -283,7 +208,7 @@ class App(tk.Tk):
 
         # Set running flag to True and start a new thread for the simulation
         self.running = True
-        simulation_thread = threading.Thread(target=self._run_simulation)
+        simulation_thread = threading.Thread(target=self._run_simulation, daemon=True)
         simulation_thread.start()
 
     def _run_simulation(self):
@@ -291,9 +216,9 @@ class App(tk.Tk):
         while self.running:
             # If it is a limited run and there are no more cycles, stop execution
             if self.is_limited_run.get():
-                n = self.cycles.get()-1
+                n = self.cycles.get() - 1
                 self.cycles.set(n)
-                
+
                 if n == 0:
                     self.stop()
                     self.is_limited_run.set(False)
@@ -304,7 +229,7 @@ class App(tk.Tk):
 
             # Execute one step and wait for X seconds
             self.step()
-            
+
             time.sleep(CYCLES_DELAY)
 
     # Method to set the cycles based on the user's input
@@ -317,45 +242,6 @@ class App(tk.Tk):
     #####################################################################
     #         GUI METHODS
     #####################################################################
-
-    def add_inst(self):
-        core = f"P{self.selected_core.get()}"
-        inst = self.selected_inst.get()
-        addr = self.selected_address.get()
-        data = self.data_entry.get()
-
-        # Clear entry
-        self.data_entry.delete(0, tk.END)
-
-        if inst == "WRITE" and data == "":
-            return
-
-        conc = ""
-        if inst == "READ":
-            conc = f"{core}: {inst} {addr}"
-        elif inst == "WRITE":
-            conc = f"{core}: {inst} {addr};{data}"
-        elif inst == "CALC":
-            conc = f"{core}: {inst}"
-
-        self.cores[int(core[1])].get_core_board().next_instr_stringvar.set(conc)
-
-    def limit_data_entry(self, new_text):
-        valid_chars = "0123456789abcdef"
-        if len(new_text) > 4:
-            return False
-        for char in new_text:
-            if char.lower() not in valid_chars:
-                return False
-        return True
-
-    def enable_disable_data_entry(self):
-        if self.selected_inst.get() == "WRITE":
-            self.data_entry["state"] = "normal"
-        else:
-            self.data_entry["state"] = "disabled"
-            # Clear entry
-            self.data_entry.delete(0, tk.END)
 
     def styles(self):
         # Creamos el estilo para el botón redondo
@@ -380,9 +266,9 @@ class App(tk.Tk):
         # Creamos el estilo para el boton redondo pero no clickeable
         style.configure(
             "Note.TLabel",
-            background=WINDOW,
+            background=ADDSECTION,
             foreground="black",
-            font=(FONT, 10, "italic", "bold"),
+            font=(FONT, 10, "bold"),
             padding=4,
         )
 
@@ -390,7 +276,7 @@ class App(tk.Tk):
         style.configure(
             "Custom.TRadiobutton",
             padding=10,
-            background=WINDOW,
+            background=ADDSECTION,
             font=(FONT, 10),
             foreground=NOTE,
         )

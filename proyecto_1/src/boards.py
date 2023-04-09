@@ -1,7 +1,8 @@
 # Importing the tkinter module
 import tkinter as tk
-from Utils import *
-from myrandom import myrandom as rand
+from tkinter import DISABLED, ttk
+from src.utils import *
+from src.myrandom import myrandom as rand
 
 
 def update_text_and_bg_color(widget, text):
@@ -260,8 +261,14 @@ class CoreBoard(tk.Frame):
             background=BACKGROUND,
             highlightthickness=1,
             highlightbackground=BORDER,
+            # width=283,
+            # height=240,
+        
         )
 
+
+        # self.grid_propagate(False)
+        
         # Titulo
         title = tk.Label(
             self, text=f"N{id}", bg=BACKGROUND, fg=BORDER, font=(FONT, 11, "bold")
@@ -269,18 +276,18 @@ class CoreBoard(tk.Frame):
         title.grid(row=0, column=0, padx=10, pady=(4, 0), sticky="w")
         # Miss
         self.miss = tk.Label(
-            self, text="", bg=BACKGROUND, fg="red", font=(FONT, 10, "bold")
+            self, text="", bg=BACKGROUND, fg="red", font=(FONT, 9, "bold")
         )
-        self.miss.grid(row=0, column=1, padx=10, pady=(4, 0), sticky="e")
+        self.miss.grid(row=0, column=1, columnspan=3, padx=10, pady=(4, 0), sticky="ne")
 
         #############
 
         # Instructions Frame
         InstrFrame = tk.Frame(self, background=BACKGROUND)
-        InstrFrame.grid(row=1, column=0, padx=10, pady=(4, 0), sticky="nswe")
+        InstrFrame.grid(row=1, column=0, padx=10, pady=(4, 0), sticky="nswe", columnspan=4)
         # Board Frame
         BoardFrame = tk.Frame(self, background=BORDER)
-        BoardFrame.grid(row=2, column=0, padx=(10, 10), pady=(5, 10), columnspan=2)
+        BoardFrame.grid(row=2, column=0, padx=(10, 10), pady=(5, 10), columnspan=4)
 
         #############
 
@@ -311,8 +318,8 @@ class CoreBoard(tk.Frame):
             fg="black",
             font=(FONT, 10, "bold"),
         )
-        next_instruction_label.grid(row=0, column=1, padx=2, sticky="w")
-        curr_instruction_label.grid(row=1, column=1, padx=2, sticky="w")
+        next_instruction_label.grid(row=0, column=1, columnspan=3, padx=2, sticky="w")
+        curr_instruction_label.grid(row=1, column=1, columnspan=3, padx=2, sticky="w")
 
         #############
 
@@ -341,3 +348,147 @@ class CoreBoard(tk.Frame):
 
     def clear_animation(self):
         self.board.clear_animation()
+
+
+class Add_Inst_Section(tk.Frame):
+    def __init__(self, master, cores):
+        super().__init__(
+            master,
+            background="gainsboro",
+            highlightthickness=1,
+            highlightbackground=EDGES,
+            width=501,
+            height=240,
+        )
+        self.grid_propagate(False)
+        self.cores = cores
+        
+        # Processors, Instructions, Address, Data
+        self.selected_core = tk.StringVar(value="0")
+        self.selected_inst = tk.StringVar(value="READ")
+        self.selected_address = tk.StringVar(value="000")
+
+        FrameProcessor = tk.Frame(self, background=ADDSECTION)
+        FrameAddress = tk.Frame(self, background=ADDSECTION)
+        FrameInstruction = tk.Frame(self, background=ADDSECTION)
+        FrameData = tk.Frame(self, background=ADDSECTION)
+        FrameProcessor.grid(row=0, column=0, sticky="nsew")
+        FrameInstruction.grid(row=1, column=0, pady=(1, 0), sticky="nsew")
+        FrameAddress.grid(row=2, column=0, pady=(1, 0), sticky="nsew")
+        FrameData.grid(row=3, column=0, pady=(1, 0), sticky="nsew")
+
+        label1 = ttk.Label(
+            FrameProcessor, style="Note.TLabel", text="Select node         "
+        )
+        label2 = ttk.Label(
+            FrameInstruction, style="Note.TLabel", text="Select operation "
+        )
+
+        label3 = ttk.Label(FrameAddress, style="Note.TLabel", text="Select address    ")
+        label4 = ttk.Label(FrameData, style="Note.TLabel", text="Enter data        ")
+        padx = 20
+        label1.grid(row=0, column=0, sticky="w", padx=padx)
+        label2.grid(row=0, column=0, sticky="w", padx=padx + 1)
+        label3.grid(row=0, column=0, sticky="w", rowspan=2, padx=padx)
+        label4.grid(row=0, column=0, sticky="w", padx=padx, pady=5)
+        padx = 12
+
+        # Options for the radio buttons
+        options1 = ["N0", "N1", "N2", "N3"]
+        options2 = ["READ", "WRITE", "CALC"]
+        options3 = ["000", "001", "010", "011", "100", "101", "110", "111"]
+
+        for i, option in enumerate(options1):  # Processors
+            radio = ttk.Radiobutton(
+                FrameProcessor,
+                style="Custom.TRadiobutton",
+                takefocus=False,
+                text=option,
+                variable=self.selected_core,
+                value=i,
+            )
+            radio.grid(row=0, column=i + 1, padx=padx)
+
+        for i, option in enumerate(options2):  #  Instructions
+            radio = ttk.Radiobutton(
+                FrameInstruction,
+                style="Custom.TRadiobutton",
+                takefocus=False,
+                text=option,
+                variable=self.selected_inst,
+                value=option,
+                command=self.enable_disable_data_entry,
+            )
+            radio.grid(row=0, column=i + 1, padx=padx)
+
+        for i, option in enumerate(options3):  # Addresses
+            radio = ttk.Radiobutton(
+                FrameAddress,
+                style="Custom.TRadiobutton",
+                takefocus=False,
+                text=option,
+                variable=self.selected_address,
+                value=option,
+            )
+            if i <= 3:
+                radio.grid(row=0, column=i + 1, padx=padx)
+            else:
+                radio.grid(row=1, column=(i + 1) - 4, padx=padx)
+
+        # Entry para insertar el dato a escribir
+        self.data_entry = tk.Entry(FrameData, font=(FONT, 10), state="disabled")
+        self.data_entry.grid(row=1, column=0, padx=padx)
+        self.data_entry.config(
+            validate="key",
+            validatecommand=(self.data_entry.register(self.limit_data_entry), "%P"),
+        )
+
+        # Button to add instruction.
+        self.add = ttk.Button(
+            FrameData,
+            text="ADD",
+            command=self.add_inst,
+            style="RoundedButton.TButton",
+            takefocus=False,
+            state=DISABLED,
+        )
+        self.add.grid(row=1, column=1, pady=(0, 6))
+
+    def add_inst(self):
+        core = f"P{self.selected_core.get()}"
+        inst = self.selected_inst.get()
+        addr = self.selected_address.get()
+        data = self.data_entry.get()
+
+        # Clear entry
+        self.data_entry.delete(0, tk.END)
+
+        if inst == "WRITE" and data == "":
+            return
+
+        conc = ""
+        if inst == "READ":
+            conc = f"{core}: {inst} {addr}"
+        elif inst == "WRITE":
+            conc = f"{core}: {inst} {addr};{data}"
+        elif inst == "CALC":
+            conc = f"{core}: {inst}"
+
+        self.cores[int(core[1])].get_core_board().next_instr_stringvar.set(conc)
+
+    def limit_data_entry(self, new_text):
+        valid_chars = "0123456789abcdef"
+        if len(new_text) > 4:
+            return False
+        for char in new_text:
+            if char.lower() not in valid_chars:
+                return False
+        return True
+
+    def enable_disable_data_entry(self):
+        if self.selected_inst.get() == "WRITE":
+            self.data_entry["state"] = "normal"
+        else:
+            self.data_entry["state"] = "disabled"
+            # Clear entry
+            self.data_entry.delete(0, tk.END)
