@@ -452,7 +452,24 @@ class Add_Inst_Section(tk.Frame):
             state=DISABLED,
         )
         self.add.grid(row=1, column=1, pady=(0, 6))
+        
+        # Button to add instruction.
+        self.calc = ttk.Button(
+            FrameData,
+            text="STALL",
+            command=self.stall,
+            style="RoundedButton.TButton",
+            takefocus=False,
+            state=DISABLED,
+        )
+        self.calc.grid(row=1, column=2, padx=(145,0),pady=(0, 6))
 
+    def stall(self):
+        for core in self.cores:
+            inst_str = f"P{self.selected_core.get()}: CALC"
+            core.get_core_board().next_instr_stringvar.set(inst_str)
+
+        
     def add_inst(self):
         core = f"P{self.selected_core.get()}"
         inst = self.selected_inst.get()

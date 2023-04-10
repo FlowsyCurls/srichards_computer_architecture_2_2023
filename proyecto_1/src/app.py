@@ -190,6 +190,7 @@ class App(tk.Tk):
             thread.start()
         # Enable the step, run, and check buttons
         self.add_inst_section.add["state"] = "normal"
+        self.add_inst_section.calc["state"] = "normal"
         self.step_button["state"] = "normal"
         self.run_button["state"] = "normal"
         self.check_button["state"] = "normal"
