@@ -124,8 +124,6 @@ class App(tk.Tk):
         # Memory
         self.memory_board = MemoryBoard(main_canva)
         self.memory_board.place(x=pos_x + 400, y=pos_y + 305)
-        # self.memory_board.read(address="000", delay=1400)
-        # self.memory_board.write(address="111", arr_data=[None, "FFFF"], delay=3000)
 
         # Bus
         self.bus = Bus(self.memory_board, self.channel, self.cores)

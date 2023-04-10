@@ -465,6 +465,9 @@ class Add_Inst_Section(tk.Frame):
         if inst == "WRITE" and data == "":
             return
 
+        # Add zeros in case its necessary
+        data = "{:0>4}".format(data)
+
         conc = ""
         if inst == "READ":
             conc = f"{core}: {inst} {addr}"
