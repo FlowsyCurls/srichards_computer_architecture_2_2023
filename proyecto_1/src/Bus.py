@@ -5,13 +5,13 @@ from src.utils import (
     HIGHLIGHT_INV,
     HIGHLIGHT_READ,
     HIGHLIGHT_RQ,
+    HIGHLIGHT_WB,
     HIGHLIGHT_WRITE,
     MEM_DELAY,
     NUM_CPU,
     PROCESS_DELAY,
     AccessType,
 )
-from src.myrandom import myrandom
 
 
 class Bus:
@@ -91,20 +91,22 @@ class Bus:
 
         # If no sponsors
         else:
-            # Check if address is exclusive
-            if self._is_exclusive(address, core_id):
+            # Check if address is E or S in another node
+            # and save that value to the local cache in S state
+            shared_data = self._seek_shared(address, core_id)
+            if shared_data is not None:
+                time.sleep(CACHE_WR_DELAY)
+                local_cache.set(block_id, "S", address, shared_data)
+                local_cache.animation(block_id, HIGHLIGHT_WRITE)
+
+            # Then no one have the value, read from memory then set block state to E
+            else:
                 # Read from memory
                 mem_data = self.get_mem_data(address)
                 time.sleep(MEM_DELAY)
                 self.memory_board.animation(address, HIGHLIGHT_READ)
                 time.sleep(CACHE_WR_DELAY)
                 local_cache.set(block_id, "E", address, mem_data)
-                local_cache.animation(block_id, HIGHLIGHT_WRITE)
-            # Then the address is shared with a block that was once exclusive.
-            else:
-                shared_data = self._seek_shared(address, core_id)
-                local_cache.set(block_id, "S", address, shared_data)
-                time.sleep(CACHE_WR_DELAY)
                 local_cache.animation(block_id, HIGHLIGHT_WRITE)
 
     """
@@ -113,9 +115,7 @@ class Bus:
     caches to invalidate their copies of the block.
     """
 
-    def _process_writemiss(
-        self, core_id, local_cache, block_id, state, address, data, value
-    ):
+    def _process_writemiss(self, core_id, local_cache, block_id, state, address, data, value):
         # If state is O, then do a WB
         if state in "O":
             self._perfom_wb(address, data)
@@ -137,28 +137,7 @@ class Bus:
         self.memory_board.set_data(dirty_address, dirty_data)
         # Set board color
         time.sleep(MEM_DELAY)
-        self.memory_board.animation(dirty_address, HIGHLIGHT_WRITE)
-
-    def _is_exclusive(self, local_address, requester_id):
-        for core_id in range(NUM_CPU):
-            if core_id != requester_id:
-                local_cache = self.get_core_cache(core_id)
-                block = local_cache.get_block_by_address(local_address)
-
-                # If block is not in core[i], then continue
-                if block is None:
-                    continue
-
-                # If block is in core[i], then verify state.
-                state = block.get_state()
-
-                # If the state is different than I, then return False
-                if state == "I":
-                    continue
-                return False
-
-        # If we arrive here it means that no core has the block of this address  in a valid state.
-        return True
+        self.memory_board.animation(dirty_address, HIGHLIGHT_WB)
 
     def _seek_owned(self, local_address, requester_id):
         # search for block that can gives the value - Owned or Modified
@@ -207,7 +186,7 @@ class Bus:
                     local_cache.animation(block.get_id(), HIGHLIGHT_RQ)
                     return block.get_data()
 
-        # If we arrive here it means that no core has an S block of this address.
+        # If we arrive here it means that no core has an E, S block of this address.
         return None
 
     def _seek_invalidate(self, local_address, requester_id):
@@ -225,7 +204,7 @@ class Bus:
                 # If block is in core[i], then invalidate
                 if block.get_state() == "I":
                     return
-                
+
                 block.set_state("I")
                 time.sleep(CACHE_WR_DELAY)
                 local_cache.animation(block.get_id(), HIGHLIGHT_INV)
