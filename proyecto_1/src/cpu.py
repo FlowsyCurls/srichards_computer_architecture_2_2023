@@ -25,6 +25,8 @@ class Controller:
 
         if op == "CALC":
             message = {"id": core_name, "access": AccessType.calc}
+            self.core_board.animation_access("• • • •")
+            time.sleep(CACHE_WR_DELAY)
             self.channel.put(message)
             return
 

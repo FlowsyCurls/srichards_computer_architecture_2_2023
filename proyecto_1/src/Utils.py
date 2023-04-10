@@ -3,7 +3,7 @@ from enum import Enum
 # SYSTEM VARIABLES
 NUM_CPU = 4
 PROCESS_DELAY = 1
-CYCLES_DELAY = 2.5
+CYCLES_DELAY = 5
 
 MEM_DELAY = 1.5
 CACHE_RD_DELAY = MEM_DELAY * 0.40
@@ -20,6 +20,7 @@ CIAN = "36m"
 WHITE = "37m"
 
 # GUI specs
+GUIDE = 'whitesmoke'
 FONT = "Century Gothic"
 BORDER = "black"
 WINDOW = "gainsboro"
@@ -35,6 +36,7 @@ HIGHLIGHT_READ = "gold"
 HIGHLIGHT_WRITE = "turquoise"
 HIGHLIGHT_RQ = "blueviolet"
 HIGHLIGHT_INV = "crimson"
+HIGHLIGHT_WB = "hotpink"
 
 padding = 1
 height = 28

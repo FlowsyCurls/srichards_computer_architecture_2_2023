@@ -7,7 +7,6 @@ from tkinter import DISABLED, ttk
 from src.bus import Bus
 from src.utils import *
 from src.cpu import CPU
-from src.myrandom import myrandom
 from src.boards import Add_Inst_Section, CoreBoard, MemoryBoard
 
 
@@ -134,11 +133,45 @@ class App(tk.Tk):
         main_canva.create_rectangle(x1, y1, x2, y2, fill=BORDER)
         main_canva.create_polygon(x1, y1 - 8, x1, y2 + 7, x1 - 15, y1 + 8, fill=BORDER)
         main_canva.create_polygon(x2, y1 - 8, x2, y2 + 7, x2 + 15, y1 + 8, fill=BORDER)
-        
+
         # Add instruction section
         self.add_inst_section = Add_Inst_Section(main_canva, self.cores)
         self.add_inst_section.place(x=pos_x + 705, y=340)
 
+        # Colors menu
+        guide = tk.Canvas(
+            main_canva,
+            background=GUIDE,
+            highlightthickness=1,
+            highlightbackground=EDGES,
+        )
+        guide.place(x=30, y=460)
+        # Define a list of colors and their names
+        colors = [
+            (HIGHLIGHT_HIT, "hit"),
+            (HIGHLIGHT_READ, "read"),
+            (HIGHLIGHT_WRITE, "write"),
+            (HIGHLIGHT_RQ, "sponsored"),
+            (HIGHLIGHT_INV, "invalidated"),
+            (HIGHLIGHT_WB, "write-back"),
+        ]
+
+        # Loop to create each row with a circle and a label
+        for i, (color, name) in enumerate(colors):
+            color_canvas = tk.Canvas(
+                guide,
+                width=20,
+                height=20,
+                background=color,
+                highlightthickness=1,
+                highlightbackground=EDGES,
+            )
+
+            color_canvas.grid(row=i, column=0, padx=5, pady=5)
+
+            # Create a label with the color name in column 1
+            label = tk.Label(guide, text=name, bg=GUIDE, font=(FONT, 10),)
+            label.grid(row=i, column=1, padx=5, pady=5, sticky="w")
 
     # function to exit the application
     def _exit_app(self, event):
@@ -150,8 +183,13 @@ class App(tk.Tk):
 
     # Method that loads the next instruction for each core.
     def start(self):
-        # Loop over each core in the cache
-        [core.set_instruction() for core in self.cores]
+        # Create and start threads for creating instructions on each CPU core
+        cpu_threads = [
+            threading.Thread(target=core.set_instruction, daemon=True)
+            for core in (self.cores)
+        ]
+        for thread in cpu_threads:
+            thread.start()
         # Enable the step, run, and check buttons
         self.add_inst_section.add["state"] = "normal"
         self.step_button["state"] = "normal"
@@ -193,12 +231,6 @@ class App(tk.Tk):
 
     # Method to start the simulation
     def run(self):
-        # Print message indicating whether it's a limited run or non-stop operation
-        # if self.is_limited_run.get():
-        #     print(f"Running {str(self.cycles.get())} cycles")
-        # else:
-        #     print("Non-stop operation")
-
         # Disable run, step, and check buttons; enable stop button; disable spinbox entry
         self.run_button["state"] = "disabled"
         self.step_button["state"] = "disabled"

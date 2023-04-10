@@ -93,7 +93,6 @@ class Board:
             label.place(relx=0.5, rely=0.5, anchor="center")
 
         # Crear las celdas
-
         self.blocks = {}
         self.frames = {}
         self.labels = {}
@@ -263,12 +262,10 @@ class CoreBoard(tk.Frame):
             highlightbackground=BORDER,
             # width=283,
             # height=240,
-        
         )
 
-
         # self.grid_propagate(False)
-        
+
         # Titulo
         title = tk.Label(
             self, text=f"N{id}", bg=BACKGROUND, fg=BORDER, font=(FONT, 11, "bold")
@@ -276,7 +273,7 @@ class CoreBoard(tk.Frame):
         title.grid(row=0, column=0, padx=10, pady=(4, 0), sticky="w")
         # Miss
         self.miss = tk.Label(
-            self, text="", bg=BACKGROUND, fg="red", font=(FONT, 9, "bold")
+            self, text="", bg=BACKGROUND, fg="red", font=(FONT, 10, "bold")
         )
         self.miss.grid(row=0, column=1, columnspan=3, padx=10, pady=(4, 0), sticky="ne")
 
@@ -284,7 +281,9 @@ class CoreBoard(tk.Frame):
 
         # Instructions Frame
         InstrFrame = tk.Frame(self, background=BACKGROUND)
-        InstrFrame.grid(row=1, column=0, padx=10, pady=(4, 0), sticky="nswe", columnspan=4)
+        InstrFrame.grid(
+            row=1, column=0, padx=10, pady=(4, 0), sticky="nswe", columnspan=4
+        )
         # Board Frame
         BoardFrame = tk.Frame(self, background=BORDER)
         BoardFrame.grid(row=2, column=0, padx=(10, 10), pady=(5, 10), columnspan=4)
@@ -340,7 +339,7 @@ class CoreBoard(tk.Frame):
         )
 
     def animation_access(self, access):
-        color = "red" if "miss" in access else "green"
+        color = "red" if "miss" in access else ("green" if "hit" in access else "blue")
         self.miss.config(text=access, fg=color)
 
     def get_cache(self):
@@ -362,7 +361,7 @@ class Add_Inst_Section(tk.Frame):
         )
         self.grid_propagate(False)
         self.cores = cores
-        
+
         # Processors, Instructions, Address, Data
         self.selected_core = tk.StringVar(value="0")
         self.selected_inst = tk.StringVar(value="READ")
@@ -458,7 +457,7 @@ class Add_Inst_Section(tk.Frame):
         core = f"P{self.selected_core.get()}"
         inst = self.selected_inst.get()
         addr = self.selected_address.get()
-        data = self.data_entry.get()
+        data = self.data_entry.get().upper()
 
         # Clear entry
         self.data_entry.delete(0, tk.END)
