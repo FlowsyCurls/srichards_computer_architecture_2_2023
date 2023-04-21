@@ -115,9 +115,11 @@ class Bus:
     caches to invalidate their copies of the block.
     """
 
-    def _process_writemiss(self, core_id, local_cache, block_id, state, address, data, value):
+    def _process_writemiss(
+        self, core_id, local_cache, block_id, state, address, data, value
+    ):
         # If state is O, then do a WB
-        if state in "O":
+        if state in ["O", "M"]:
             self._perfom_wb(address, data)
 
         # Now write in the block and save the changes in the local cache
